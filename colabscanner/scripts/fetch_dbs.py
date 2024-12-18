@@ -7,7 +7,7 @@ class db_fetcher:
 
     def fetch_db_path(self):
         """
-        Fetches the database from the colabscanner github repository
+        Fetches HMM database from the colabscanner repository
         """
         if not os.path.exists(self.db_dir):
             print(f"db_dir does not exist {self.db_dir}")
@@ -36,7 +36,6 @@ class db_downloader:
     def __init__(self,destination_dir):
         self.base_url = "https://zenodo.org/records/14358349/files/hmm_dbs.tar?download=1"
         self.destination_dir = destination_dir
-        self.filenames = []
 
     def download_db(self):
         '''

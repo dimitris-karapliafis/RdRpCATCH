@@ -15,7 +15,7 @@ class hmmsearch_formatter:
         export_processed_file(data, outfile, p_cov_threshold=0): Exports the processed hmmscan output file.
     """
 
-    def __init__(self, hmm_raw, hmm_processed):
+    def __init__(self, hmm_raw, hmm_processed, seq_type):
         """
         Constructor for the hmmsearch_parser class.
 
@@ -23,6 +23,10 @@ class hmmsearch_formatter:
         :type hmm_raw: str
         :param hmm_processed: Path to the processed output file.
         :type hmm_processed: str
+
+        If PROTEIN: contig name is the first column
+        If DNA: contig name is the last column, first column is the translated sequence name (e.g. contig_name_frame)
+
         """
         self.data = {}
         self.hmm_output_file = hmm_raw
@@ -32,7 +36,11 @@ class hmmsearch_formatter:
         parsed_data = self.calculate_norm_bitscore_custom(parsed_data)
         self.data = self.calculate_coverage(parsed_data)
 
-        self.export_processed_file(self.data, hmm_processed)
+        if seq_type == 'PROTEIN':
+            self.export_processed_file_aa(self.data, hmm_processed)
+
+        elif seq_type == 'DNA':
+            self.export_processed_file_dna(self.data, hmm_processed)
 
     def parse_output(self, hmm_raw_out):
         """
@@ -174,7 +182,9 @@ class hmmsearch_formatter:
         """
         return self.data.get(contig_name, {})
 
-    def export_processed_file(self, data, outfile, p_cov_threshold=0):
+
+
+    def export_processed_file_aa(self, data, outfile, p_cov_threshold=0):
         """
         Exports the processed hmmsearch output file.
 
@@ -211,11 +221,50 @@ class hmmsearch_formatter:
         return outfile
 
 
+    def export_processed_file_dna(self, data, outfile, p_cov_threshold=0):
+        """
+        Exports the processed hmmsearch output file.
+
+        :param data: Dictionary with parsed data.
+        :type data: dict
+        :param outfile: Path to the output file.
+        :type outfile: str
+        :param p_cov_threshold: Minimum profile coverage threshold, defaults to 0.
+        :type p_cov_threshold: int, optional
+        :return: Path to the output file.
+        :rtype: str
+        """
+        title_line = ["#t_name", "t_acc", "tlen", "q_name", "q_acc", "qlen", "E-value",
+                      "score", "bias", "dom_num", "dom_total", "dom_c_value", "dom_i_value", "dom_score",
+                      "dom_bias", "hmm_from", "hmm_to", "ali_from", "ali_to", "env_from", "env_to", "acc",
+                      "description of target", "norm_bitscore_profile", "norm_bitscore_contig", 'norm_bitscore_custom',
+                      "ID_score",'aln_length','profile_coverage', "contig_coverage", 'contig_name']
+
+        line_list = []
+        with open(outfile, 'w') as out:
+            for contig, profiles in data.items():
+                for profile, domains in profiles.items():
+                    if len(profiles[profile]) > 1:
+                        line_list.append([contig] + domains[-1] + [contig.rsplit('_', 1)[0]])
+
+                    else:
+                        for domain in domains:
+                            line_list.append([contig] + domain + [contig.rsplit('_', 1)[0]])
+            out.write("\t".join(title_line) + '\n')
+
+            for line in line_list:
+                if line[-1] > p_cov_threshold:
+                    j_line = "\t".join(str(l) for l in line)
+                    out.write(j_line + '\n')
+        return outfile
+
+
 class hmmsearch_format_helpers:
 
-    def __init__(self, hmm_outfn):
+    def __init__(self, hmm_outfn, seq_type):
 
         self.hmm_outfn = hmm_outfn
+        self.seq_type = seq_type
 
     def hmm_to_contig_set(self):
         """
@@ -231,7 +280,11 @@ class hmmsearch_format_helpers:
                 if line.startswith('#'):
                     continue
                 else:
-                    contig_set.add(line.split()[0])
+                    if self.seq_type == 'PROTEIN':
+                        contig_set.add(line.split()[0])
+                    elif self.seq_type == 'DNA':
+                        contig_set.add(line.split()[-1])
+
         return contig_set
 
 
@@ -243,6 +296,9 @@ class hmmsearch_format_helpers:
         :type evalue_threshold: float
         :return: Path to the filtered output file.
         :rtype: str
+
+        If PROTEIN: contig name is the first column
+        If DNA: contig name is the last column, first column is the translated sequence name (e.g. contig_name_frame)
         """
         hmm_dict = {}
 
@@ -252,7 +308,10 @@ class hmmsearch_format_helpers:
                     title_line = line
                     continue
                 line = line.strip().split('\t')
-                contig_name = line[0]
+                if self.seq_type == 'PROTEIN':
+                    contig_name = line[0]
+                elif self.seq_type == 'DNA':
+                    contig_name = line[-1]
                 if contig_name not in hmm_dict:
                     hmm_dict[contig_name] = [line]
                 else:
