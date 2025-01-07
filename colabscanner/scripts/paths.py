@@ -57,6 +57,9 @@ class colabscan_output:
     def seqkit_output_dir(self):
         return self.output_dir / "seqkit_output"
     @property
+    def seqkit_translate_output_dir(self):
+        return self.output_dir / "seqkit_translate_output"
+    @property
     def transeq_output_dir (self):
         return self.output_dir / "transeq_output"
     @property

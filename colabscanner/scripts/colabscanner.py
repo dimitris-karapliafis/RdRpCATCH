@@ -6,7 +6,6 @@ Wrapper for the ColabScan package.
 import parse_args
 import utils
 import paths
-import transeq
 import run_pyhmmer
 import fetch_dbs
 import format_pyhmmer_out
@@ -15,9 +14,15 @@ from pathlib import Path
 import seqkit
 import plot
 import pandas as pd
+import warnings
+
 
 
 def main():
+
+    ## Ignore warnings
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    warnings.filterwarnings("ignore", category=UserWarning)
 
     ## Parse arguments
     args = parse_args.parse_args()
@@ -33,10 +38,9 @@ def main():
     incE = args.incEvalue
     z = args.zvalue
 
-    ## Transeq parameters
+    ## seqkit translate parameters
     gen_code = args.gen_code
     frame = args.frame
-
 
 
 
@@ -129,23 +133,29 @@ def main():
 
             ## Filter out sequences with length less than 400 bp with seqkit
             logger.log("Filtering out sequences with length less than 400 bp.")
+            if not os.path.exists(outputs.seqkit_output_dir):
+                outputs.seqkit_output_dir.mkdir(parents=True)
+
             seqkit_out = outputs.seqkit_output_dir / f"{prefix}_filtered.fasta"
-            seqkit.seqkit(input_file, str(seqkit_out), log_file, threads=4, length_thr=400).run_seqkit()
+            seqkit.seqkit(input_file, seqkit_out, log_file, threads=4).run_seqkit_seq(length_thr=400)
             logger.log("Translating DNA sequence to protein sequence.")
 
             ## Set parameters for transeq
-            transeq_out = outputs.transeq_output_dir / f"{prefix}_transeq.fasta"
-            transeq_log = outputs.transeq_output_dir / f"{prefix}_transeq.log"
-            if not os.path.exists(outputs.transeq_output_dir):
-                outputs.transeq_output_dir.mkdir(parents=True)
+            # transeq_out = outputs.seqkit_translate_output_dir / f"{prefix}_transeq.fasta"
+            # transeq_log = outputs.seqkit_translate_output_dir / f"{prefix}_transeq.log"
+            if not os.path.exists(outputs.seqkit_translate_output_dir):
+                outputs.seqkit_translate_output_dir.mkdir(parents=True)
+            seqkit_translate_out = outputs.seqkit_translate_output_dir / f"{prefix}_seqkit_translate.fasta"
 
-            transeq_out = transeq.transeq(seqkit_out, transeq_out, transeq_log, gen_code, frame).run_transeq()
-            logger.log(f"Translated sequence written to: {transeq_out}")
+            seqkit_translate_out = seqkit.seqkit(seqkit_out, seqkit_translate_out, log_file, threads=4).run_seqkit_translate(gen_code, frame)
+
+            #transeq_out = transeq.transeq(seqkit_out, transeq_out, transeq_log, gen_code, frame).run_transeq()
+            logger.log(f"Translated sequence written to: {seqkit_translate_out}")
 
             for db_name,db_path in zip (db_name_list, db_path_list):
                 hmmsearch_out_path = outputs.hmm_output_dir / f"{prefix}_{db_name}_hmmsearch_out.txt"
                 logger.log(f"HMM output path: {hmmsearch_out_path}")
-                hmm_out = run_pyhmmer.pyhmmsearch(hmmsearch_out_path, transeq_out, db_path, cpus, e, incdomE, domE, incE,
+                hmm_out = run_pyhmmer.pyhmmsearch(hmmsearch_out_path, seqkit_translate_out, db_path, cpus, e, incdomE, domE, incE,
                                                   z).run_pyhmmsearch()
 
                 logger.log(f"Pyhmmer output written to: {hmm_out}")
@@ -173,53 +183,53 @@ def main():
                 df['db_name'] = db_name
                 df_list.append(df)
 
-                logger.log("Generating upset plot.")
-                if not os.path.exists(outputs.plot_outdir):
-                    outputs.plot_outdir.mkdir(parents=True)
+            logger.log("Generating upset plot.")
+            if not os.path.exists(outputs.plot_outdir):
+                outputs.plot_outdir.mkdir(parents=True)
 
-                if not os.path.exists(outputs.tsv_outdir):
-                    outputs.tsv_outdir.mkdir(parents=True)
+            if not os.path.exists(outputs.tsv_outdir):
+                outputs.tsv_outdir.mkdir(parents=True)
 
-                plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).upset_plotter(set_dict)
+            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).upset_plotter(set_dict)
 
-                # Combine all the dataframes in the list
-                combined_df = pd.concat(df_list, ignore_index=True)
-                # Write the combined dataframe to a tsv file
-                for col in ['E-value', 'score', 'norm_bitscore_profile', 'norm_bitscore_contig',
-                            'ID_score', 'profile_coverage', 'contig_coverage']:
-                    combined_df[col] = pd.to_numeric(combined_df[col], errors='coerce')
-                combined_df.to_csv(outputs.tsv_outdir / f"{prefix}_combined_df.tsv", sep="\t", index=False)
+            # Combine all the dataframes in the list
+            combined_df = pd.concat(df_list, ignore_index=True)
+            # Write the combined dataframe to a tsv file
+            for col in ['E-value', 'score', 'norm_bitscore_profile', 'norm_bitscore_contig',
+                        'ID_score', 'profile_coverage', 'contig_coverage']:
+                combined_df[col] = pd.to_numeric(combined_df[col], errors='coerce')
+            combined_df.to_csv(outputs.tsv_outdir / f"{prefix}_combined_df.tsv", sep="\t", index=False)
 
-                logger.log(f"Combined dataframe written to: {outputs.tsv_outdir / f'{prefix}_combined_df.tsv'}")
-                # Generate e-value plot
-                plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_evalue(combined_df)
-                # Generate score plot
-                plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_score(combined_df)
-                # Generate normalized bitscore plot
-                plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_norm_bitscore_profile(combined_df)
-                # Generate normalized bitscore contig plot
-                plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_norm_bitscore_contig(combined_df)
-                # Generate ID score plot
-                plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_ID_score(combined_df)
-                # Generate Profile coverage plot
-                plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_profile_coverage(combined_df)
-                # Generate contig coverage plot
-                plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_contig_coverage(combined_df)
+            logger.log(f"Combined dataframe written to: {outputs.tsv_outdir / f'{prefix}_combined_df.tsv'}")
+            # Generate e-value plot
+            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_evalue(combined_df)
+            # Generate score plot
+            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_score(combined_df)
+            # Generate normalized bitscore plot
+            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_norm_bitscore_profile(combined_df)
+            # Generate normalized bitscore contig plot
+            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_norm_bitscore_contig(combined_df)
+            # Generate ID score plot
+            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_ID_score(combined_df)
+            # Generate Profile coverage plot
+            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_profile_coverage(combined_df)
+            # Generate contig coverage plot
+            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_contig_coverage(combined_df)
 
-                # Extract all the contigs
-                combined_set = set.union(*[value for value in set_dict.values()])
-                translated_combined_set = set.union(*[value for value in translated_set_dict.values()])
-                # Write a fasta file with all the contigs
-                if not os.path.exists(outputs.fasta_output_dir):
-                    outputs.fasta_output_dir.mkdir(parents=True)
+            # Extract all the contigs
+            combined_set = set.union(*[value for value in set_dict.values()])
+            translated_combined_set = set.union(*[value for value in translated_set_dict.values()])
+            # Write a fasta file with all the contigs
+            if not os.path.exists(outputs.fasta_output_dir):
+                outputs.fasta_output_dir.mkdir(parents=True)
 
-                fasta_out = outputs.fasta_output_dir / f"{prefix}_contigs.fasta"
-                trans_fasta_out = outputs.fasta_output_dir / f"{prefix}_translated_contigs.fasta"
-                utils.fasta(input_file).write_fasta(utils.fasta(input_file).extract_contigs(combined_set), fasta_out)
+            fasta_out = outputs.fasta_output_dir / f"{prefix}_contigs.fasta"
+            trans_fasta_out = outputs.fasta_output_dir / f"{prefix}_translated_contigs.fasta"
+            utils.fasta(input_file).write_fasta(utils.fasta(input_file).extract_contigs(combined_set), fasta_out)
 
-                utils.fasta(transeq_out).write_fasta(utils.fasta(transeq_out).extract_contigs(translated_combined_set),fasta_out)
+            utils.fasta(seqkit_translate_out).write_fasta(utils.fasta(seqkit_translate_out).extract_contigs(translated_combined_set),trans_fasta_out)
 
-                logger.log(f"Contigs written to: {fasta_out}")
+            logger.log(f"Contigs written to: {fasta_out}")
 
 
 

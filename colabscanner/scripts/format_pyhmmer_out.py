@@ -1,4 +1,5 @@
 import pandas as pd
+import re
 
 class hmmsearch_formatter:
     """
@@ -245,15 +246,15 @@ class hmmsearch_formatter:
             for contig, profiles in data.items():
                 for profile, domains in profiles.items():
                     if len(profiles[profile]) > 1:
-                        line_list.append([contig] + domains[-1] + [contig.rsplit('_', 1)[0]])
+                        line_list.append([contig] + domains[-1] + [re.sub(r'_frame=[+-]?\d+', '', contig)])
 
                     else:
                         for domain in domains:
-                            line_list.append([contig] + domain + [contig.rsplit('_', 1)[0]])
+                            line_list.append([contig] + domain + [re.sub(r'_frame=[+-]?\d+', '', contig)])
             out.write("\t".join(title_line) + '\n')
 
             for line in line_list:
-                if line[-1] > p_cov_threshold:
+                if line[-2] > p_cov_threshold:
                     j_line = "\t".join(str(l) for l in line)
                     out.write(j_line + '\n')
         return outfile
