@@ -54,14 +54,12 @@ class colabscan_output:
         return self.output_dir / "lowest_evalue_hmm_output"
 
     @property
-    def seqkit_output_dir(self):
-        return self.output_dir / "seqkit_output"
+    def seqkit_seq_output_dir(self):
+        return self.output_dir / "seqkit_seq_output"
     @property
     def seqkit_translate_output_dir(self):
         return self.output_dir / "seqkit_translate_output"
-    @property
-    def transeq_output_dir (self):
-        return self.output_dir / "transeq_output"
+
     @property
     def plot_outdir(self):
         return self.output_dir / "plots"

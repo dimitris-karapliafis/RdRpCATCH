@@ -42,8 +42,6 @@ def main():
     gen_code = args.gen_code
     frame = args.frame
 
-
-
     if args.download_flag:
         fetch_dbs.db_downloader(paths.colabscan_input.db_dir).download_db()
         fetch_dbs.db_downloader(paths.colabscan_input.db_dir).extract_db()
@@ -136,23 +134,21 @@ def main():
             if not os.path.exists(outputs.seqkit_output_dir):
                 outputs.seqkit_output_dir.mkdir(parents=True)
 
-            seqkit_out = outputs.seqkit_output_dir / f"{prefix}_filtered.fasta"
+            seqkit_out = outputs.seqkit_seq_output_dir / f"{prefix}_filtered.fasta"
             seqkit.seqkit(input_file, seqkit_out, log_file, threads=4).run_seqkit_seq(length_thr=400)
             logger.log("Translating DNA sequence to protein sequence.")
 
             ## Set parameters for transeq
-            # transeq_out = outputs.seqkit_translate_output_dir / f"{prefix}_transeq.fasta"
-            # transeq_log = outputs.seqkit_translate_output_dir / f"{prefix}_transeq.log"
+
             if not os.path.exists(outputs.seqkit_translate_output_dir):
                 outputs.seqkit_translate_output_dir.mkdir(parents=True)
             seqkit_translate_out = outputs.seqkit_translate_output_dir / f"{prefix}_seqkit_translate.fasta"
 
             seqkit_translate_out = seqkit.seqkit(seqkit_out, seqkit_translate_out, log_file, threads=4).run_seqkit_translate(gen_code, frame)
 
-            #transeq_out = transeq.transeq(seqkit_out, transeq_out, transeq_log, gen_code, frame).run_transeq()
             logger.log(f"Translated sequence written to: {seqkit_translate_out}")
 
-            for db_name,db_path in zip (db_name_list, db_path_list):
+            for db_name,db_path in zip(db_name_list, db_path_list):
                 hmmsearch_out_path = outputs.hmm_output_dir / f"{prefix}_{db_name}_hmmsearch_out.txt"
                 logger.log(f"HMM output path: {hmmsearch_out_path}")
                 hmm_out = run_pyhmmer.pyhmmsearch(hmmsearch_out_path, seqkit_translate_out, db_path, cpus, e, incdomE, domE, incE,
