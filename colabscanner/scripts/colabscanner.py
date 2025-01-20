@@ -29,6 +29,7 @@ def main():
     input_file = args.input
     output_dir = args.output
     db_options = args.db_options
+    seq_type = args.seq_type
 
     ## HMMsearch parameters
     e = args.evalue
@@ -38,14 +39,22 @@ def main():
     incE = args.incEvalue
     z = args.zvalue
 
+    ## seqkit seq parameters
+    length_thr = args.length_thr
+
     ## seqkit translate parameters
     gen_code = args.gen_code
     frame = args.frame
 
     if args.download_flag:
-        fetch_dbs.db_downloader(paths.colabscan_input.db_dir).download_db()
-        fetch_dbs.db_downloader(paths.colabscan_input.db_dir).extract_db()
-        fetch_dbs.db_downloader(paths.colabscan_input.db_dir).del_tar()
+        if not args.destination_dir:
+            fetch_dbs.db_downloader(paths.colabscan_input.db_dir).download_db()
+            fetch_dbs.db_downloader(paths.colabscan_input.db_dir).extract_db()
+            fetch_dbs.db_downloader(paths.colabscan_input.db_dir).del_tar()
+        else:
+            fetch_dbs.db_downloader(Path(args.destination_dir)).download_db()
+            fetch_dbs.db_downloader(Path(args.destination_dir)).extract_db()
+            fetch_dbs.db_downloader(Path(args.destination_dir)).del_tar()
 
     else:
         ## Set output directories
@@ -65,11 +74,15 @@ def main():
             logger.log(f"Valid fasta file: {input_file}")
 
         ## Check sequence type
-        seq_type = utils.fasta_checker(input_file).check_seq_type()
+        if not seq_type:
+            seq_type = utils.fasta_checker(input_file).check_seq_type()
         logger.log(f"Sequence type: {seq_type}")
 
         ## Create hmm database directory object
-        hmm_db_dir = paths.colabscan_input.hmm_dbs_dir
+        if args.hmm_dir:
+            hmm_db_dir = Path(args.hmm_dir)
+        else:
+            hmm_db_dir = paths.colabscan_input.hmm_dbs_dir
         logger.log(f"HMM database directory: {hmm_db_dir}")
 
 
@@ -121,8 +134,8 @@ def main():
         if not os.path.exists(outputs.hmm_output_dir):
             outputs.hmm_output_dir.mkdir(parents=True)
 
-        if seq_type == 'DNA':
-            logger.log("DNA sequence detected.")
+        if seq_type == 'nuc':
+            logger.log("Nucleotide sequence detected.")
 
             set_dict = {}
             translated_set_dict = {}
@@ -131,12 +144,12 @@ def main():
 
             ## Filter out sequences with length less than 400 bp with seqkit
             logger.log("Filtering out sequences with length less than 400 bp.")
-            if not os.path.exists(outputs.seqkit_output_dir):
-                outputs.seqkit_output_dir.mkdir(parents=True)
+            if not os.path.exists(outputs.seqkit_seq_output_dir):
+                outputs.seqkit_seq_output_dir.mkdir(parents=True)
 
             seqkit_out = outputs.seqkit_seq_output_dir / f"{prefix}_filtered.fasta"
-            seqkit.seqkit(input_file, seqkit_out, log_file, threads=4).run_seqkit_seq(length_thr=400)
-            logger.log("Translating DNA sequence to protein sequence.")
+            seqkit.seqkit(input_file, seqkit_out, log_file, threads=4).run_seqkit_seq(length_thr)
+            logger.log("Translating nucleotide sequence to protein sequence.")
 
             ## Set parameters for transeq
 
@@ -172,7 +185,7 @@ def main():
                 set_dict[db_name] = format_pyhmmer_out.hmmsearch_format_helpers(form_hmm_out,
                                                                                 seq_type).hmm_to_contig_set()
                 translated_set_dict[db_name] = format_pyhmmer_out.hmmsearch_format_helpers(form_hmm_out,
-                                                                                           'PROTEIN').hmm_to_contig_set()
+                                                                                           'prot').hmm_to_contig_set()
 
                 # Convert to pandas dataframe, add db_name column and append to df_list
                 df = pd.read_csv(lowest_evalue_out, sep='\t')
@@ -186,7 +199,8 @@ def main():
             if not os.path.exists(outputs.tsv_outdir):
                 outputs.tsv_outdir.mkdir(parents=True)
 
-            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).upset_plotter(set_dict)
+            if len(db_name_list) > 1:
+                plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).upset_plotter(set_dict)
 
             # Combine all the dataframes in the list
             combined_df = pd.concat(df_list, ignore_index=True)
@@ -194,7 +208,9 @@ def main():
             for col in ['E-value', 'score', 'norm_bitscore_profile', 'norm_bitscore_contig',
                         'ID_score', 'profile_coverage', 'contig_coverage']:
                 combined_df[col] = pd.to_numeric(combined_df[col], errors='coerce')
-            combined_df.to_csv(outputs.tsv_outdir / f"{prefix}_combined_df.tsv", sep="\t", index=False)
+
+            combined_df_path = outputs.tsv_outdir / f"{prefix}_combined_df.tsv"
+            combined_df.to_csv(outputs.tsv_outdir / combined_df_path, sep="\t", index=False)
 
             logger.log(f"Combined dataframe written to: {outputs.tsv_outdir / f'{prefix}_combined_df.tsv'}")
             # Generate e-value plot
@@ -222,15 +238,15 @@ def main():
             fasta_out = outputs.fasta_output_dir / f"{prefix}_contigs.fasta"
             trans_fasta_out = outputs.fasta_output_dir / f"{prefix}_translated_contigs.fasta"
             utils.fasta(input_file).write_fasta(utils.fasta(input_file).extract_contigs(combined_set), fasta_out)
-
             utils.fasta(seqkit_translate_out).write_fasta(utils.fasta(seqkit_translate_out).extract_contigs(translated_combined_set),trans_fasta_out)
-
+            colabscan_output= outputs.tsv_outdir / f"{prefix}_colabscan_output.tsv"
+            format_pyhmmer_out.hmmsearch_output_writter().write_hmmsearch_hits(combined_df_path, seq_type, colabscan_output)
             logger.log(f"Contigs written to: {fasta_out}")
 
 
 
 
-        elif seq_type == 'PROTEIN':
+        elif seq_type == 'prot':
             logger.log("Protein sequence detected.")
 
             set_dict = {}
@@ -269,7 +285,8 @@ def main():
             if not os.path.exists(outputs.tsv_outdir):
                 outputs.tsv_outdir.mkdir(parents=True)
 
-            plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).upset_plotter(set_dict)
+            if len(db_name_list) > 1:
+                plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).upset_plotter(set_dict)
 
             # Combine all the dataframes in the list
             combined_df = pd.concat(df_list, ignore_index=True)
@@ -277,7 +294,9 @@ def main():
             for col in ['E-value', 'score', 'norm_bitscore_profile', 'norm_bitscore_contig',
                         'ID_score', 'profile_coverage', 'contig_coverage']:
                 combined_df[col] = pd.to_numeric(combined_df[col], errors='coerce')
-            combined_df.to_csv(outputs.tsv_outdir / f"{prefix}_combined_df.tsv", sep="\t", index=False)
+
+            combined_df_path = outputs.tsv_outdir / f"{prefix}_combined_df.tsv"
+            combined_df.to_csv(outputs.tsv_outdir / combined_df_path, sep="\t", index=False)
 
             logger.log(f"Combined dataframe written to: {outputs.tsv_outdir / f'{prefix}_combined_df.tsv'}")
             # Generate e-value plot
@@ -304,6 +323,8 @@ def main():
             fasta_out = outputs.fasta_output_dir / f"{prefix}_contigs.fasta"
             utils.fasta(input_file).write_fasta(utils.fasta(input_file).extract_contigs(combined_set), fasta_out)
             logger.log(f"Contigs written to: {fasta_out}")
+            colabscan_output= outputs.tsv_outdir / f"{prefix}_colabscan_output.tsv"
+            format_pyhmmer_out.hmmsearch_output_writter().write_hmmsearch_hits(combined_df_path, seq_type, colabscan_output)
 
 
 

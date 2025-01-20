@@ -70,11 +70,11 @@ class fasta_checker:
         protein_set =  {'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', 'X'}
         for header, seq in fasta_dict.items():
             if set(seq).issubset(dna_set):
-                seq_type = 'DNA'
+                seq_type = 'nuc'
             elif set(seq).issubset(set(dna_set_ambiguous)):
-                seq_type = 'DNA'
+                seq_type = 'nuc'
             elif set(seq).issubset(protein_set):
-                seq_type = 'PROTEIN'
+                seq_type = 'prot'
             else:
                 raise Exception(f"Invalid sequence type in fasta file: {self.fasta_file} for sequence: {header} with sequence: {set(seq)}")
 

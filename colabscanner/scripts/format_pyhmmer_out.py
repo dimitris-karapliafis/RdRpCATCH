@@ -37,10 +37,10 @@ class hmmsearch_formatter:
         parsed_data = self.calculate_norm_bitscore_custom(parsed_data)
         self.data = self.calculate_coverage(parsed_data)
 
-        if seq_type == 'PROTEIN':
+        if seq_type == 'prot':
             self.export_processed_file_aa(self.data, hmm_processed)
 
-        elif seq_type == 'DNA':
+        elif seq_type == 'nuc':
             self.export_processed_file_dna(self.data, hmm_processed)
 
     def parse_output(self, hmm_raw_out):
@@ -281,9 +281,9 @@ class hmmsearch_format_helpers:
                 if line.startswith('#'):
                     continue
                 else:
-                    if self.seq_type == 'PROTEIN':
+                    if self.seq_type == 'prot':
                         contig_set.add(line.split()[0])
-                    elif self.seq_type == 'DNA':
+                    elif self.seq_type == 'nuc':
                         contig_set.add(line.split()[-1])
 
         return contig_set
@@ -309,9 +309,9 @@ class hmmsearch_format_helpers:
                     title_line = line
                     continue
                 line = line.strip().split('\t')
-                if self.seq_type == 'PROTEIN':
+                if self.seq_type == 'prot':
                     contig_name = line[0]
-                elif self.seq_type == 'DNA':
+                elif self.seq_type == 'nuc':
                     contig_name = line[-1]
                 if contig_name not in hmm_dict:
                     hmm_dict[contig_name] = [line]
@@ -333,6 +333,88 @@ class hmmsearch_format_helpers:
         df = pd.read_csv(self.hmm_outfn, sep='\t')
 
         return df.iloc[:, index].tolist()
+
+
+class hmmsearch_output_writter:
+
+    def __init__(self):
+        """
+        Constructor for the hmmsearch_output_writter class.
+
+        :
+        """
+    def get_hmmsearch_hits(self, hmmsearch_combined_fn, seq_type):
+
+        hmm_dict = {}
+
+        with open(hmmsearch_combined_fn) as in_handle:
+            for line in in_handle:
+                if line.startswith('#'):
+                    title_line = line
+                    continue
+                line = line.strip().split('\t')
+                if seq_type == 'prot':
+                    contig_name = line[0]
+                elif seq_type == 'nuc':
+                    contig_name = line[-2]
+                if contig_name not in hmm_dict:
+                    hmm_dict[contig_name] = [line]
+                else:
+                    hmm_dict[contig_name].append(line)
+
+        return hmm_dict
+
+    def write_hmmsearch_hits(self, hmmsearch_combined_fn, seq_type, out_fn):
+
+        hmm_dict = self.get_hmmsearch_hits(hmmsearch_combined_fn, seq_type)
+        db_list = []
+        output_list = []
+        for contig, hits in hmm_dict.items():
+            best_hit = min(hits, key=lambda x: float(x[6]))
+
+
+            for hit in hits:
+                db_list.append(hit[-1])
+                if seq_type == 'prot':
+                    translated_seq_name = "-"
+                elif seq_type == 'nuc':
+                    translated_seq_name = hit[0]
+
+            # contig_name/, Database the best hit belongs to/, Total databases that the contig was detected from/,  Sequence length (AA)/, Profile name/, profile length/,
+            # Best hit e-value/, Best hit bitscore/, Best hit hmm from/, Best hit hmm to/, Best hit ali from/, Best hit ali to/,
+            # Best hit env from/, Best hit env to/,  Best hit accuracy/,Best hit description/, Best hit norm_bitscore_profile
+            # Best hit norm_bitscore_contig	Best hit norm_bitscore_custom	Best hit ID_score	Best hit aln_length
+            # Best hit profile_coverage	Best hit contig_coverage
+
+            hit_line = [contig,translated_seq_name, best_hit[-1], ', '.join(db_list),  best_hit[2], best_hit[3], best_hit[5], best_hit[6],
+                        best_hit[7], best_hit[15], best_hit[16],best_hit[17], best_hit[18], best_hit[19], best_hit[20],best_hit[21],
+            best_hit[22],best_hit[23],best_hit[24],best_hit[25],best_hit[26],best_hit[27],best_hit[28],best_hit[29]]
+
+            output_list.append(hit_line)
+            db_list = []
+
+
+        title_line = ["Contig_name","Translated_contig_name (frame)", "Best hit Database", "Total databases that the contig was detected from", "Sequence length (AA)", "Profile name", "profile length",
+                      "Best hit e-value", "Best hit bitscore", "Best hit hmm from", "Best hit hmm to", "Best hit ali from", "Best hit ali to",
+                      "Best hit env from", "Best hit env to", "Best hit accuracy","Best hit description", "Best hit norm_bitscore_profile",
+                      "Best hit norm_bitscore_contig", "Best hit norm_bitscore_custom", "Best hit ID_score", "Best hit aln_length",
+                      "Best hit profile_coverage", "Best hit contig_coverage"]
+
+        with open(out_fn, 'w') as out_handle:
+            out_handle.write("\t".join(title_line) + '\n')
+            for line in output_list:
+                out_handle.write('\t'.join(line) + '\n')
+
+        return out_fn
+
+
+
+
+
+
+
+
+
 
 
 
@@ -368,3 +450,4 @@ class hmmsearch_combiner:
                     for line in f:
                         out.write(line)
         return combined_file
+

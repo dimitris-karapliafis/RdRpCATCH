@@ -74,6 +74,9 @@ class colabscan_output:
     @property
     def log_file(self):
         return self.output_dir / f"{self.prefix}_colabscan.log"
+
+    def combined_df_file(self):
+        return self.output_dir / f"{self.prefix}_combined_df.tsv"
     @property
     def output_file(self):
         return self.output_dir / f"{self.prefix}.out"
