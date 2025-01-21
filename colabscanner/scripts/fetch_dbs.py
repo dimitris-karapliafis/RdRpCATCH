@@ -10,13 +10,12 @@ class db_fetcher:
         Fetches HMM database from the colabscanner repository
         """
         if not os.path.exists(self.db_dir):
-            print(f"db_dir does not exist {self.db_dir}")
+            raise FileNotFoundError(f"db_dir does not exist {self.db_dir}")
+
         db_path = None
-        print(os.listdir(self.db_dir))
         for dir in os.listdir(self.db_dir):
 
             if dir == self.db_name:
-                print(f"{self.db_name} found in {self.db_dir}")
                 for file in os.listdir(os.path.join(self.db_dir, dir)):
                     if file.endswith(".hmm") or file.endswith(".h3m" or file.endswith(".h3i")) or file.endswith(".h3f") or file.endswith(".h3p"):
                         db_fn = file.rsplit(".",1)[0]
@@ -26,7 +25,7 @@ class db_fetcher:
 
 
         if not db_path:
-            print(f"{self.db_name} not found in {self.db_dir}")
+            raise FileNotFoundError(f"{self.db_name} not found in {self.db_dir}")
         else:
             return db_path
 
