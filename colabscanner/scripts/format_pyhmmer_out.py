@@ -380,11 +380,6 @@ class hmmsearch_output_writter:
                 elif seq_type == 'nuc':
                     translated_seq_name = hit[0]
 
-            # contig_name/, Database the best hit belongs to/, Total databases that the contig was detected from/,  Sequence length (AA)/, Profile name/, profile length/,
-            # Best hit e-value/, Best hit bitscore/, Best hit hmm from/, Best hit hmm to/, Best hit ali from/, Best hit ali to/,
-            # Best hit env from/, Best hit env to/,  Best hit accuracy/,Best hit description/, Best hit norm_bitscore_profile
-            # Best hit norm_bitscore_contig	Best hit norm_bitscore_custom	Best hit ID_score	Best hit aln_length
-            # Best hit profile_coverage	Best hit contig_coverage
 
             hit_line = [contig,translated_seq_name, best_hit[-1], ', '.join(db_list),  best_hit[2], best_hit[3], best_hit[5], best_hit[6],
                         best_hit[7], best_hit[15], best_hit[16],best_hit[17], best_hit[18], best_hit[19], best_hit[20],best_hit[21],

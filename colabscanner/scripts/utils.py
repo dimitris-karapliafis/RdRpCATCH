@@ -16,7 +16,7 @@ class Logger:
        handler.setFormatter(formatter)
        self.logger.addHandler(handler)
 
-   def log(self, message):
+   def loud_log(self, message):
        self.console.log(message)
        self.logger.info(message)
 
@@ -26,10 +26,20 @@ class Logger:
    def start_timer(self):
        self.start_time = time.time()
 
-   def stop_timer(self):
-       end_time = time.time()
-       execution_time = end_time - self.start_time
-       self.log(f"Execution time: {execution_time} seconds")
+   def stop_timer(self, verbose=None):
+        end_time = time.time()
+        raw_execution_time = end_time - self.start_time
+        if raw_execution_time < 60:
+            execution_time = f"{raw_execution_time :.2f} seconds"
+        elif raw_execution_time < 3600:
+            execution_time = f"{raw_execution_time/60 :.2f} minutes"
+        else:
+            execution_time = f"{raw_execution_time/3600 :.2f} hours"
+
+        return execution_time
+
+
+
 
 
 
