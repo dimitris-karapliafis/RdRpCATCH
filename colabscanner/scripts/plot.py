@@ -30,13 +30,38 @@ class Plotter:
         plt.savefig(os.path.join(self.upset_outdir, f"{self.prefix}_upset_plot.png"), bbox_inches='tight', dpi=300)
         plt.close()
 
+    # def plot_evalue(self, combined_df):
+    #
+    #     sns.set(style="whitegrid")
+    #     plt.figure(figsize=(10, 6))
+    #     ax = sns.boxplot(x='db_name', y='E-value', data=combined_df, showfliers=False)
+    #     plt.title(f"E-value distribution", fontweight='bold')
+    #     plt.savefig(os.path.join(self.upset_outdir, f"{self.prefix}_evalue_plot.png"), bbox_inches='tight', dpi=300)
+    #     plt.close()
+
     def plot_evalue(self, combined_df):
+        # Ensure the E-value column contains only positive numbers
+        combined_df['E-value'] = combined_df['E-value'].clip(lower=1e-1000)
 
         sns.set(style="whitegrid")
         plt.figure(figsize=(10, 6))
+
         ax = sns.boxplot(x='db_name', y='E-value', data=combined_df, showfliers=False)
+        ax.set_yscale('log')
+        ymin, ymax = ax.get_ylim()
+        ax.set_ylim([max(ymin, 1e-1000), ymax])
+
+        ax.grid(axis='y', which='major', linestyle='--', alpha=0.7)
+
         plt.title(f"E-value distribution", fontweight='bold')
-        plt.savefig(os.path.join(self.upset_outdir, f"{self.prefix}_evalue_plot.png"), bbox_inches='tight', dpi=300)
+
+        # Customize y-axis ticks and labels
+        # yticks = [1e-200, 1e-150, 1e-100, 1e-50, 1e-20, 1e-10, 1e-5, 1e-1, 1]
+        # ax.set_yticks(yticks)
+        # ax.set_yticklabels([f"{y:.2e}" for y in yticks])
+
+        plt.savefig(os.path.join(self.upset_outdir, f"{self.prefix}_evalue_plot_logscale.png"), bbox_inches='tight',
+                    dpi=300)
         plt.close()
 
 

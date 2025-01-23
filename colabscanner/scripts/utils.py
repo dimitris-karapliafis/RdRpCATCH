@@ -39,10 +39,6 @@ class Logger:
         return execution_time
 
 
-
-
-
-
 class fasta_checker:
 
     def __init__(self, fasta_file):
@@ -69,7 +65,6 @@ class fasta_checker:
                     fasta_dict[header] += line.strip()
             return fasta_dict
 
-
     def check_seq_type(self):
 
         fasta_dict = self.read_fasta()
@@ -90,6 +85,31 @@ class fasta_checker:
 
         return seq_type
 
+    def check_seq_length(self, max_len):
+        """
+        Check the length of sequences in a FASTA file using Biopython.
+
+        Args:
+            fasta_file_path (str): Path to the FASTA file.
+            max_allowed_length (int): Maximum allowed length for sequences.
+
+        Raises:
+            FileNotFoundError: If the file does not exist.
+            ValueError: If any sequence exceeds the maximum allowed length.
+        """
+        ## Check if the file exists
+        if not os.path.isfile(self.fasta_file):
+            raise FileNotFoundError(f"The file '{self.fasta_file}' does not exist.")
+
+        ## Parse the FASTA file
+        for record in SeqIO.parse(self.fasta_file, "fasta"):
+            if len(record.seq) > max_len:
+                raise ValueError(f"Sequence ID: {record.id}, Description: {record.description}. "
+                                 f"Length: {len(record.seq)}, Exceeds maximum allowed length: {max_len}. Please check the input file, "
+                                 f"as this will cause issues with the pyHMMER search.")
+
+        return True
+
 
 
 class fasta:
@@ -108,9 +128,37 @@ class fasta:
         return record_list
 
     def write_fasta(self, record_list, output_file):
+
         with open(output_file, 'w') as f:
             SeqIO.write(record_list, f, "fasta")
         return output_file
+
+    def write_fasta_coords(self, coords_list, output_file, seq_type):
+
+
+        if seq_type == 'nuc':
+            contigs = [coords[1] for coords in coords_list]
+        else:
+            contigs = [coords[0] for coords in coords_list]
+
+        record_list = self.extract_contigs(contigs)
+
+        with open(output_file, 'w') as f:
+            for record in record_list:
+                for coord in coords_list:
+                    if seq_type == 'nuc':
+                        if record.id == coord[1]:
+                            record.description = record.description + f"_RdRp_start:{coord[2]}_end:{coord[3]}"
+                            SeqIO.write(record, f, "fasta")
+                    elif seq_type == 'prot':
+                        if record.id == coord[0]:
+                            record.description = record.description + f"_RdRp_start:{coord[2]}_end:{coord[3]}"
+                            SeqIO.write(record, f, "fasta")
+                    else:
+                        raise Exception(f"Invalid sequence type: {seq_type}")
+        return output_file
+
+
 
 
 

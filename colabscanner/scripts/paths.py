@@ -40,44 +40,41 @@ class colabscan_output:
     output_dir: Path
     @property
     def hmm_output_dir (self):
-        return self.output_dir / "hmm_output"
+        return self.output_dir /"tmp"/ "hmm_output"
 
-    # @property
-    # def hmm_output_path(self,db_name, fasta_name):
-    #     return self.hmm_output_dir / f"{self.prefix}_{db_name}_{fasta_name}_hmmsearch.txt"
+
     @property
     def formatted_hmm_output_dir(self):
-        return self.output_dir / "formatted_hmm_output"
+        return self.output_dir /"tmp"/ "formatted_hmm_output"
 
     @property
     def lowest_evalue_dir(self):
-        return self.output_dir / "lowest_evalue_hmm_output"
+        return self.output_dir /"tmp"/ "lowest_evalue_hmm_output"
 
     @property
     def seqkit_seq_output_dir(self):
-        return self.output_dir / "seqkit_seq_output"
+        return self.output_dir /"tmp"/ "seqkit_seq_output"
     @property
     def seqkit_translate_output_dir(self):
-        return self.output_dir / "seqkit_translate_output"
+        return self.output_dir /"tmp"/ "seqkit_translate_output"
+
+    @property
+    def tsv_outdir(self):
+        return self.output_dir /"tmp"/ "tsv_files"
 
     @property
     def plot_outdir(self):
-        return self.output_dir / "plots"
-    @property
-    def tsv_outdir(self):
-        return self.output_dir / "tsv_files"
+        return self.output_dir / f"{self.prefix}_colabscan_plots"
 
     @property
     def fasta_output_dir(self):
-        return self.output_dir / "fasta_output"
-
+        return self.output_dir / f"{self.prefix}_colabscan_fasta"
+    @property
+    def colabscan_output(self):
+        return self.output_dir / f"{self.prefix}_colabscan_output.tsv"
     @property
     def log_file(self):
         return self.output_dir / f"{self.prefix}_colabscan.log"
 
-    def combined_df_file(self):
-        return self.output_dir / f"{self.prefix}_combined_df.tsv"
-    @property
-    def output_file(self):
-        return self.output_dir / f"{self.prefix}.out"
+
 

@@ -34,8 +34,7 @@ class hmmsearch_formatter:
         parsed_data = self.parse_output(self.hmm_output_file)
         parsed_data = self.calculate_norm_bitscore_profile(parsed_data)
         parsed_data = self.calculate_norm_bitscore_contig(parsed_data)
-        parsed_data = self.calculate_norm_bitscore_custom(parsed_data)
-        self.data = self.calculate_coverage(parsed_data)
+        self.data = self.calculate_coverage_stats(parsed_data)
 
         if seq_type == 'prot':
             self.export_processed_file_aa(self.data, hmm_processed)
@@ -90,7 +89,7 @@ class hmmsearch_formatter:
                         model_length = float(domain[4])
                         domain_bitscore = float(domain[6])
                         norm_bitscore = domain_bitscore/model_length
-                        domain.append(norm_bitscore)
+                        domain.append(round(norm_bitscore,5))
 
         return data
 
@@ -107,29 +106,12 @@ class hmmsearch_formatter:
                         contig_length = float(domain[1])
                         domain_bitscore = float(domain[6])
                         norm_bitscore = domain_bitscore/contig_length
-                        domain.append(norm_bitscore)
+                        domain.append(round(norm_bitscore,5))
 
         return data
 
-    def calculate_norm_bitscore_custom(self, data):
-        """
-        Calculates the 2*BitScore/Length of contig + Length of profile for all domains in a profile.
-        :param data:
-        :return:
-        """
 
-        for contig, profiles in data.items():
-                for profile, domains in profiles.items():
-                    for domain in domains:
-                        model_length = float(domain[4])
-                        contig_length = float(domain[1])
-                        domain_bitscore = float(domain[6])
-                        norm_bitscore = (domain_bitscore/model_length) + (domain_bitscore/contig_length)
-                        domain.append(norm_bitscore)
-
-        return data
-
-    def calculate_coverage(self, data):
+    def calculate_coverage_stats(self, data):
         """
         Calculates the % coverage of all domains in a profile.
 
@@ -140,11 +122,13 @@ class hmmsearch_formatter:
         """
         # TODO: This needs to be thoroughly tested, the %perc coverage is known to be difficult to calculate due to
         # TODO: many diffent scenarios of overlap between domains. See this issue for more info:
-        # TODO: COntig coverage takes into account the hmm from-to positions, not the ali_from-to positions, so it can be
+        # TODO: Contig coverage takes into account the hmm from-to positions, not the ali_from-to positions, so it can be
         # TODO: greater than 1. See this issue for more info:
         # https://github.com/althonos/pyhmmer/issues/27
         overlap_set = set()
-        cov_set = set()
+        hmm_cov_set = set()
+        env_seq_cov_set = set()
+        ali_seq_cov_set = set()
         for contig, profiles in data.items():
 
             for profile, domains in profiles.items():
@@ -154,21 +138,43 @@ class hmmsearch_formatter:
                 contig_length = int(domains[0][1])
                 bitscore = float(domains[0][6])
                 for i in range(len(domains)):  # iterate over domains
-                    prev_dom_start = int(domains[i][14])
-                    prev_dom_end = int(domains[i][15])
-                    cov_range = list(range(prev_dom_start, prev_dom_end + 1))
-                    for pos in cov_range:
-                        cov_set.add(pos)
+                    hmm_prev_dom_start = int(domains[i][14])
+                    hmm_prev_dom_end = int(domains[i][15])
+                    hmm_cov_range = list(range(hmm_prev_dom_start, hmm_prev_dom_end + 1))
+
+                    env_seq_prev_dom_start = int(domains[i][18])
+                    env_seq_prev_dom_end = int(domains[i][19])
+                    seq_cov_range = list(range(env_seq_prev_dom_start, env_seq_prev_dom_end + 1))
+
+                    ali_seq_prev_dom_start = int(domains[i][16])
+                    ali_seq_prev_dom_end = int(domains[i][17])
+                    ali_seq_cov_range = list(range(ali_seq_prev_dom_start, ali_seq_prev_dom_end + 1))
+
+
+
+                    for pos in hmm_cov_range:
+                        hmm_cov_set.add(pos)
+
+                    for pos in seq_cov_range:
+                        env_seq_cov_set.add(pos)
+
+                    for pos in ali_seq_cov_range:
+                        ali_seq_cov_set.add(pos)
 
                     if i == len(domains)-1:
-                        domain_coverage = len(cov_set) / query_length
-                        contig_coverage = len(cov_set) / contig_length
-                        domains[i].append(bitscore/len(cov_set))
-                        domains[i].append(len(cov_set))
-                        domains[i].append(domain_coverage)
-                        domains[i].append(contig_coverage)
+                        domain_coverage = len(hmm_cov_set) / query_length
+                        contig_coverage = len(env_seq_cov_set) / contig_length
+                        id_score = bitscore/len(ali_seq_cov_set)
+                        domains[i].append(round(id_score,5))
+                        domains[i].append(len(ali_seq_cov_set))
+                        domains[i].append(round(domain_coverage,5))
+                        domains[i].append(round(contig_coverage,5))
+                        domains[i].append(min(env_seq_cov_set))
+                        domains[i].append(max(env_seq_cov_set))
 
-                    cov_set = set()
+                hmm_cov_set = set()
+                env_seq_cov_set = set()
+                ali_seq_cov_set = set()
 
         return data  # return data with domain coverage added
 
@@ -201,8 +207,8 @@ class hmmsearch_formatter:
         title_line = ["#t_name", "t_acc", "tlen", "q_name", "q_acc", "qlen", "E-value",
                       "score", "bias", "dom_num", "dom_total", "dom_c_value", "dom_i_value", "dom_score",
                       "dom_bias", "hmm_from", "hmm_to", "ali_from", "ali_to", "env_from", "env_to", "acc",
-                      "description of target", "norm_bitscore_profile", "norm_bitscore_contig", 'norm_bitscore_custom',
-                      "ID_score",'aln_length','profile_coverage', "contig_coverage"]
+                      "description of target", "norm_bitscore_profile", "norm_bitscore_contig",
+                      "ID_score",'aln_length','profile_coverage', "contig_coverage", "RdRp_start", "RdRp_end"]
 
         line_list = []
         with open(outfile, 'w') as out:
@@ -238,8 +244,8 @@ class hmmsearch_formatter:
         title_line = ["#t_name", "t_acc", "tlen", "q_name", "q_acc", "qlen", "E-value",
                       "score", "bias", "dom_num", "dom_total", "dom_c_value", "dom_i_value", "dom_score",
                       "dom_bias", "hmm_from", "hmm_to", "ali_from", "ali_to", "env_from", "env_to", "acc",
-                      "description of target", "norm_bitscore_profile", "norm_bitscore_contig", 'norm_bitscore_custom',
-                      "ID_score",'aln_length','profile_coverage', "contig_coverage", 'contig_name']
+                      "description of target", "norm_bitscore_profile", "norm_bitscore_contig",
+                      "ID_score",'aln_length','profile_coverage', "contig_coverage", "RdRp_start", "RdRp_end", 'contig_name']
 
         line_list = []
         with open(outfile, 'w') as out:
@@ -369,31 +375,34 @@ class hmmsearch_output_writter:
         hmm_dict = self.get_hmmsearch_hits(hmmsearch_combined_fn, seq_type)
         db_list = []
         output_list = []
+
         for contig, hits in hmm_dict.items():
             best_hit = min(hits, key=lambda x: float(x[6]))
 
 
             for hit in hits:
                 db_list.append(hit[-1])
-                if seq_type == 'prot':
-                    translated_seq_name = "-"
-                elif seq_type == 'nuc':
+                if seq_type == 'nuc':
                     translated_seq_name = hit[0]
+                else:
+                    translated_seq_name = "-"
 
-
-            hit_line = [contig,translated_seq_name, best_hit[-1], ', '.join(db_list),  best_hit[2], best_hit[3], best_hit[5], best_hit[6],
-                        best_hit[7], best_hit[15], best_hit[16],best_hit[17], best_hit[18], best_hit[19], best_hit[20],best_hit[21],
-            best_hit[22],best_hit[23],best_hit[24],best_hit[25],best_hit[26],best_hit[27],best_hit[28],best_hit[29]]
+            if seq_type == 'nuc':
+                hit_line = [contig, translated_seq_name, best_hit[-1], ', '.join(db_list), best_hit[2], best_hit[3],
+                            best_hit[5], best_hit[6], best_hit[7], best_hit[-4], best_hit[-3], best_hit[22],
+                            best_hit[23], best_hit[24], best_hit[25], best_hit[26], best_hit[27], best_hit[28]]
+            else:
+                hit_line = [contig, translated_seq_name, best_hit[-1], ', '.join(db_list), best_hit[2], best_hit[3],
+                            best_hit[5], best_hit[6], best_hit[7], best_hit[-3], best_hit[-2], best_hit[22],
+                            best_hit[23], best_hit[24], best_hit[25], best_hit[26], best_hit[27], best_hit[28]]
 
             output_list.append(hit_line)
             db_list = []
 
 
         title_line = ["Contig_name","Translated_contig_name (frame)", "Best hit Database", "Total databases that the contig was detected from", "Sequence length (AA)", "Profile name", "profile length",
-                      "Best hit e-value", "Best hit bitscore", "Best hit hmm from", "Best hit hmm to", "Best hit ali from", "Best hit ali to",
-                      "Best hit env from", "Best hit env to", "Best hit accuracy","Best hit description", "Best hit norm_bitscore_profile",
-                      "Best hit norm_bitscore_contig", "Best hit norm_bitscore_custom", "Best hit ID_score", "Best hit aln_length",
-                      "Best hit profile_coverage", "Best hit contig_coverage"]
+                      "Best hit e-value", "Best hit bitscore", "RdRp from (AA)", "RdRp to (AA)", "Best hit description", "Best hit norm_bitscore_profile",
+                      "Best hit norm_bitscore_contig", "Best hit ID_score", "Best hit aln_length","Best hit profile_coverage", "Best hit contig_coverage"]
 
         with open(out_fn, 'w') as out_handle:
             out_handle.write("\t".join(title_line) + '\n')
@@ -402,16 +411,25 @@ class hmmsearch_output_writter:
 
         return out_fn
 
+    def get_rdrp_coords(self, out_fn):
 
+        rdrp_coords = []
 
+        with open(out_fn) as in_handle:
+            for line in in_handle:
+                if line.startswith('Contig_name'):
+                    line = line.strip().split('\t')
+                    print(line[9], line[10])
 
+                    continue
+                line = line.strip().split('\t')
 
+                contig_name = line[0]
+                translated_seq_name = line[1]
 
+                rdrp_coords.append([contig_name, translated_seq_name,  line[9], line[10]])
 
-
-
-
-
+        return rdrp_coords
 
 class hmmsearch_combiner:
 
