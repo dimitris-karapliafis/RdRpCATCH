@@ -79,8 +79,8 @@ class Plotter:
         sns.set(style="whitegrid")
         plt.figure(figsize=(10, 6))
         ax = sns.boxplot(x='db_name', y='norm_bitscore_profile', data=combined_df)
-        plt.title(f"Normalized bitscore distribution", fontweight='bold')
-        plt.savefig(os.path.join(self.upset_outdir, f"{self.prefix}_norm_bitscore_plot.png"), bbox_inches='tight', dpi=300)
+        plt.title(f"Normalized bitscore distribution (profile)", fontweight='bold')
+        plt.savefig(os.path.join(self.upset_outdir, f"{self.prefix}_norm_bitscore_plot_profile.png"), bbox_inches='tight', dpi=300)
         plt.close()
 
 
@@ -89,8 +89,8 @@ class Plotter:
         sns.set(style="whitegrid")
         plt.figure(figsize=(10, 6))
         ax = sns.boxplot(x='db_name', y='norm_bitscore_contig', data=combined_df)
-        plt.title(f"Normalized bitscore distribution", fontweight='bold')
-        plt.savefig(os.path.join(self.upset_outdir, f"{self.prefix}_norm_bitscore_plot.png"), bbox_inches='tight', dpi=300)
+        plt.title(f"Normalized bitscore distribution (contig)", fontweight='bold')
+        plt.savefig(os.path.join(self.upset_outdir, f"{self.prefix}_norm_bitscore_contig_plot.png"), bbox_inches='tight', dpi=300)
         plt.close()
 
     def plot_ID_score(self, combined_df):

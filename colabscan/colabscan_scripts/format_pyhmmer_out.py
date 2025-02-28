@@ -295,6 +295,81 @@ class hmmsearch_format_helpers:
         return contig_set
 
 
+    def highest_bitscore_hits(self, filtered_file):
+        """
+        Filters the hmmsearch output file based on the highest bitscore for each contig.
+
+        :param evalue_threshold: E-value threshold for filtering.
+        :type evalue_threshold: float
+        :return: Path to the filtered output file.
+        :rtype: str
+
+        If PROTEIN: contig name is the first column
+        If DNA: contig name is the last column, first column is the translated sequence name (e.g. contig_name_frame)
+        """
+        hmm_dict = {}
+
+        with open(self.hmm_outfn) as in_handle:
+            for line in in_handle:
+                if line.startswith('#'):
+                    title_line = line.strip().split('\t')
+                    title_line = title_line[:27] + ['Total_positive_profiles'] + title_line[27:]
+                    title_line = '\t'.join(title_line) + '\n'
+                    continue
+                line = line.strip().split('\t')
+                if self.seq_type == 'prot':
+                    contig_name = line[0]
+                elif self.seq_type == 'nuc':
+                    contig_name = line[-1]
+                if contig_name not in hmm_dict:
+                    hmm_dict[contig_name] = [line]
+                else:
+                    hmm_dict[contig_name].append(line)
+
+        with open(filtered_file, 'w') as out_handle:
+            out_handle.write(title_line)
+            for contig, hits in hmm_dict.items():
+                total_hits = len(hits)
+                best_hit = max(hits, key=lambda x: float(x[7]))
+                best_hit = best_hit[:27] + [str(total_hits)] + best_hit[27:]
+                out_handle.write('\t'.join(best_hit) + '\n')
+
+    def highest_norm_bit_prof_hits(self, filtered_file):
+        """
+        Filters the hmmsearch output file based on the highest normalized bitscore for each contig.
+
+        :param evalue_threshold: E-value threshold for filtering.
+        :type evalue_threshold: float
+        :return: Path to the filtered output file.
+        :rtype: str
+
+        If PROTEIN: contig name is the first column
+        If DNA: contig name is the last column, first column is the translated sequence name (e.g. contig_name_frame)
+        """
+        hmm_dict = {}
+
+        with open(self.hmm_outfn) as in_handle:
+            for line in in_handle:
+                if line.startswith('#'):
+                    title_line = line
+                    continue
+                line = line.strip().split('\t')
+                if self.seq_type == 'prot':
+                    contig_name = line[0]
+                elif self.seq_type == 'nuc':
+                    contig_name = line[-1]
+                if contig_name not in hmm_dict:
+                    hmm_dict[contig_name] = [line]
+                else:
+                    hmm_dict[contig_name].append(line)
+
+        with open(filtered_file, 'w') as out_handle:
+            out_handle.write(title_line)
+            for contig, hits in hmm_dict.items():
+                best_hit = max(hits, key=lambda x: float(x[23]))
+                out_handle.write('\t'.join(best_hit) + '\n')
+
+
     def lowest_evalue_hits(self,filtered_file):
         """
         Filters the hmmsearch output file based on the lowest E-value for each contig.
@@ -332,7 +407,8 @@ class hmmsearch_format_helpers:
 
 
     def extract_col(self, index):
-        """Tranforms the hmmsearch output file to a pandas dataframe. Then extracts the column of interest based on index. Outputs a list of the column values.
+        """Tranforms the hmmsearch output file to a pandas dataframe.
+         Then extracts the column of interest based on index. Outputs a list of the column values.
 
         :return:
         """
@@ -370,46 +446,114 @@ class hmmsearch_output_writter:
 
         return hmm_dict
 
-    def write_hmmsearch_hits(self, hmmsearch_combined_fn, seq_type, out_fn):
+    def write_hmmsearch_hits(self, hmmsearch_combined_fn, seq_type, out_fn,gff_out_fn):
 
         hmm_dict = self.get_hmmsearch_hits(hmmsearch_combined_fn, seq_type)
         db_list = []
         output_list = []
 
         for contig, hits in hmm_dict.items():
-            best_hit = min(hits, key=lambda x: float(x[6]))
+            best_hit = max(hits, key=lambda x: float(x[7]))
+            total_hits = ""
 
 
             for hit in hits:
                 db_list.append(hit[-1])
+                total_hits += f"{hit[-1]}={hit[27]};"
+
                 if seq_type == 'nuc':
                     translated_seq_name = hit[0]
                 else:
                     translated_seq_name = "-"
 
             if seq_type == 'nuc':
-                hit_line = [contig, translated_seq_name, best_hit[-1], ', '.join(db_list), best_hit[2], best_hit[3],
+                hit_line = [contig, translated_seq_name, best_hit[-1], str(total_hits), best_hit[2], best_hit[3],
                             best_hit[5], best_hit[6], best_hit[7], best_hit[-4], best_hit[-3], best_hit[22],
-                            best_hit[23], best_hit[24], best_hit[25], best_hit[26], best_hit[27], best_hit[28]]
+                            best_hit[23], best_hit[24], best_hit[25], best_hit[26], best_hit[28], best_hit[29]]
             else:
-                hit_line = [contig, translated_seq_name, best_hit[-1], ', '.join(db_list), best_hit[2], best_hit[3],
+                hit_line = [contig, translated_seq_name, best_hit[-1], str(total_hits), best_hit[2], best_hit[3],
                             best_hit[5], best_hit[6], best_hit[7], best_hit[-3], best_hit[-2], best_hit[22],
-                            best_hit[23], best_hit[24], best_hit[25], best_hit[26], best_hit[27], best_hit[28]]
+                            best_hit[23], best_hit[24], best_hit[25], best_hit[26], best_hit[28], best_hit[29]]
 
             output_list.append(hit_line)
             db_list = []
 
 
-        title_line = ["Contig_name","Translated_contig_name (frame)", "Best hit Database", "Total databases that the contig was detected from", "Sequence length (AA)", "Profile name", "profile length",
-                      "Best hit e-value", "Best hit bitscore", "RdRp from (AA)", "RdRp to (AA)", "Best hit description", "Best hit norm_bitscore_profile",
-                      "Best hit norm_bitscore_contig", "Best hit ID_score", "Best hit aln_length","Best hit profile_coverage", "Best hit contig_coverage"]
+        title_line = ["#Contig_name","Translated_contig_name (frame)", "Best_hit_Database", "Total_databases_that_the_contig_was_detected(No_of_Profiles)", "Sequence_length(AA)", "Best_hit_profile_name", "Best_hit_profile_length",
+                      "Best_hit_e-value", "Best_hit_bitscore", "RdRp_from(AA)", "RdRp_to(AA)", "Best_hit_description", "Best_hit_norm_bitscore_profile",
+                      "Best_hit_norm_bitscore_contig", "Best_hit_ID_score", "Best_hit_aln_length","Best_hit_profile_coverage", "Best_hit_contig_coverage"]
 
         with open(out_fn, 'w') as out_handle:
             out_handle.write("\t".join(title_line) + '\n')
             for line in output_list:
                 out_handle.write('\t'.join(line) + '\n')
 
+        self.write_gff_file(output_list, seq_type, gff_out_fn)
+
         return out_fn
+
+    def write_gff_file(self, output_list, seq_type, gff_fn):
+
+        with open(gff_fn, 'w') as out_handle:
+            out_handle.write("##gff-version 3\n")
+
+            for line in output_list:
+                if seq_type == 'nuc':
+                    contig_name = line[0]
+                    translated_seq_name = line[1]
+                    db_name = line[2]
+                    db_list = line[3]
+                    seq_length = line[4]
+                    profile_name = line[5]
+                    profile_length = line[6]
+                    e_value = line[7]
+                    bitscore = line[8]
+                    rdrp_start = line[9]
+                    rdrp_end = line[10]
+                    description = line[11]
+                    norm_bitscore_profile = line[12]
+                    norm_bitscore_contig = line[13]
+                    ID_score = line[14]
+                    aln_length = line[15]
+                    profile_coverage = line[16]
+                    contig_coverage = line[17]
+
+                    out_handle.write(f"{translated_seq_name}\tColabScan\tRdRp_domain\t{rdrp_start}\t{rdrp_end}"
+                                     f"\t{bitscore}\t+\t.\tID={contig_name};Profile_Name={profile_name};"
+                                     f" Profile_Db={db_name};E-value={e_value};Bitscore={bitscore};"
+                                     f"Norm_bitscore_profile={norm_bitscore_profile};"
+                                     f"Norm_bitscore_contig={norm_bitscore_contig};"
+                                     f"ID_score={ID_score};Aln_length={aln_length};Profile_coverage={profile_coverage};"
+                                     f"Contig_coverage={contig_coverage};Description={description}\n")
+                else:
+                    contig_name = line[0]
+                    translated_seq_name = line[1]
+                    db_name = line[2]
+                    db_list = line[3]
+                    seq_length = line[4]
+                    profile_name = line[5]
+                    profile_length = line[6]
+                    e_value = line[7]
+                    bitscore = line[8]
+                    rdrp_start = line[9]
+                    rdrp_end = line[10]
+                    description = line[11]
+                    norm_bitscore_profile = line[12]
+                    norm_bitscore_contig = line[13]
+                    ID_score = line[14]
+                    aln_length = line[15]
+                    profile_coverage = line[16]
+                    contig_coverage = line[17]
+                    out_handle.write(f"{contig_name}\tColabScan\tRdRp_domain\t{rdrp_start}\t{rdrp_end}\t{bitscore}\t."
+                                     f"\t.\tID={contig_name};Profile_Name={profile_name}; Profile_Db={db_name};"
+                                     f"E-value={e_value};Bitscore={bitscore};"
+                                     f"Norm_bitscore_profile={norm_bitscore_profile};"
+                                     f"Norm_bitscore_contig={norm_bitscore_contig};ID_score={ID_score};"
+                                     f"Aln_length={aln_length};Profile_coverage={profile_coverage};"
+                                     f"Contig_coverage={contig_coverage};Description={description}\n")
+
+
+        return gff_fn
 
     def get_rdrp_coords(self, out_fn):
 
@@ -419,16 +563,13 @@ class hmmsearch_output_writter:
             for line in in_handle:
                 if line.startswith('Contig_name'):
                     line = line.strip().split('\t')
-                    print(line[9], line[10])
 
                     continue
                 line = line.strip().split('\t')
 
                 contig_name = line[0]
                 translated_seq_name = line[1]
-
                 rdrp_coords.append([contig_name, translated_seq_name,  line[9], line[10]])
-
         return rdrp_coords
 
 class hmmsearch_combiner:

@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "colabscan"
+version = "1.0.0"
+description = "RNA virus RdRp sequence scanner"
+readme = "README.md"
+authors = [
+    {name = "Dimitris Karapliafis", email = "dimitris.karapliafis@wur.nl"}
+]
+license = {text = "Not yet decided"}
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    "biopython==1.78",
+    "upsetplot==0.9.0",
+    "numpy==2.2.3",
+    "pandas==2.2.3",
+    "pyhmmer==0.11.0",
+    "rich==13.9.4",
+    "rich_click==1.8.6",
+    "seaborn==0.13.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/dimitris-karapliafis/ColaB-Scan"
+Repository = "https://github.com/dimitris-karapliafis/ColaB-Scan"
+
+[project.scripts]
+colabscan = "colabscan.cli.args:cli"
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+packages = {find = {}}

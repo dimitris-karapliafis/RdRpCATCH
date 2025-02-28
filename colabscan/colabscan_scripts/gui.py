@@ -104,7 +104,7 @@ class colabscanner_gui:
             ('Inclusion E-value threshold', self.inc_evalue_var),
             ('Domain E-value threshold', self.dom_evalue_var),
             ('Inclusion domain E-value threshold', self.incdom_evalue_var),
-            ('Number of sequences to search against', self.z_value_var),
+            ('z-value', self.z_value_var),
             ('Number of CPUs to use', self.cpus_var)
         ]
 

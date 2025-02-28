@@ -34,7 +34,6 @@ class seqkit:
                 subprocess.run(seqkit_cmd, stdout=fout, stderr=fout, shell=False, check=True)
 
             except subprocess.CalledProcessError as e:
-
                 cmd_str = ' '.join(seqkit_cmd)
                 raise Exception(f"Error running seqkit command: {cmd_str}")
 

@@ -3,6 +3,7 @@ import time
 from rich.console import Console
 from Bio import SeqIO
 import os
+import pandas as pd
 
 class Logger:
    def __init__(self, log_file):
@@ -148,15 +149,123 @@ class fasta:
                 for coord in coords_list:
                     if seq_type == 'nuc':
                         if record.id == coord[1]:
-                            record.description = record.description + f"_RdRp_start:{coord[2]}_end:{coord[3]}"
+                            record.id = record.id + f"_RdRp_start:{coord[2]}_end:{coord[3]}"
                             SeqIO.write(record, f, "fasta")
                     elif seq_type == 'prot':
                         if record.id == coord[0]:
-                            record.description = record.description + f"_RdRp_start:{coord[2]}_end:{coord[3]}"
+                            record.id = record.id + f"_RdRp_start:{coord[2]}_end:{coord[3]}"
                             SeqIO.write(record, f, "fasta")
                     else:
                         raise Exception(f"Invalid sequence type: {seq_type}")
         return output_file
+
+
+class mmseqs_parser:
+
+    def __init__(self, mmseqs_tax_out_file, mmseqs_s_out_file):
+
+        self.mmseqs_tax_out_file = mmseqs_tax_out_file
+        self.mmseqs_s_out_file = mmseqs_s_out_file
+
+
+    def parse_mmseqs_tax_lca(self):
+        with open(self.mmseqs_tax_out_file, 'r') as f:
+            lca_dict = {}
+            for line in f:
+                line = line.strip().split('\t')
+
+                contig = line[0]
+                if len(line) < 5:
+                    lca_lineage = line[3]
+                else:
+                    lca_lineage = line[4]
+                lca_dict[contig] = lca_lineage
+        return lca_dict
+
+    def parse_mmseqs_e_search_tophit(self):
+
+        with open(self.mmseqs_s_out_file, 'r') as f:
+            tophit_dict = {}
+            for line in f:
+                line = line.strip().split('\t')
+                contig = line[0]
+
+                if contig not in tophit_dict:
+                    target = line[1]
+                    fident = line[2]
+                    alnlen = line[3]
+                    eval = line[10]
+                    bits = line[11]
+                    qcov = line[12]
+                    lineage = line[14]
+                    tophit_dict[contig] = [target,fident, alnlen, eval, bits, qcov, lineage]
+                else:
+                    continue
+
+        return tophit_dict
+
+    def tax_to_colabscan(self, colabscan_out, extended_colabscan_out, seq_type):
+
+        lca_dict = self.parse_mmseqs_tax_lca()
+        tophit_dict = self.parse_mmseqs_e_search_tophit()
+
+        with open(colabscan_out, "r") as f_handle, open(extended_colabscan_out, 'w') as out_handle:
+
+            for line in f_handle:
+                line = line.strip().split("\t")
+                if line[0].startswith("#Contig_name"):
+                    title_line = line + ["MMseqs_Taxonomy_2bLCA", "MMseqs_TopHit_accession", "MMseqs_TopHit_fident",
+                                       "MMseqs_TopHit_alnlen", "MMseqs_TopHit_eval", "MMseqs_TopHit_bitscore",
+                                       "MMseqs_TopHit_qcov", "MMseqs_TopHit_lineage"]
+                    out_handle.write("\t".join(title_line) + "\n")
+                else:
+
+                    if seq_type == 'nuc':
+                        c_name  = line[1]
+                    else:
+                        c_name = line[0]
+
+                    full_c_name = f"{c_name}_RdRp_start:{line[9]}_end:{line[10]}"
+
+                    if full_c_name in lca_dict:
+                        lca = lca_dict[full_c_name]
+                    else:
+                        lca = 'NA'
+
+                    if full_c_name in tophit_dict:
+                        tophit = tophit_dict[full_c_name]
+                        tophit_accession = tophit[0]
+                        tophit_fident = tophit[1]
+                        tophit_alnlen = tophit[2]
+                        tophit_eval = tophit[3]
+                        tophit_bitscore = tophit[4]
+                        tophit_qcov = tophit[5]
+                        tophit_lineage = tophit[6]
+                    else:
+                        tophit_accession = 'NA'
+                        tophit_fident = 'NA'
+                        tophit_alnlen = 'NA'
+                        tophit_eval = 'NA'
+                        tophit_bitscore = 'NA'
+                        tophit_qcov = 'NA'
+                        tophit_lineage = 'NA'
+
+                    line.extend([lca, tophit_accession, tophit_fident, tophit_alnlen, tophit_eval, tophit_bitscore,
+                                    tophit_qcov, tophit_lineage])
+
+                    out_handle.write("\t".join(line) + "\n")
+
+        df = pd.read_csv(extended_colabscan_out, sep="\t")
+        df = df.drop(["Best_hit_norm_bitscore_profile", "Best_hit_norm_bitscore_contig","Best_hit_ID_score", "Best_hit_aln_length"], axis=1)
+        column_order = ["#Contig_name","Translated_contig_name (frame)",
+                        "Sequence_length(AA)","Total_databases_that_the_contig_was_detected(No_of_Profiles)",
+                        "Best_hit_Database","Best_hit_profile_name", "Best_hit_profile_length", "Best_hit_e-value",
+                        "Best_hit_bitscore","RdRp_from(AA)", "RdRp_to(AA)","Best_hit_profile_coverage",
+                        "Best_hit_contig_coverage", "MMseqs_Taxonomy_2bLCA", "MMseqs_TopHit_accession",
+                        "MMseqs_TopHit_fident", "MMseqs_TopHit_alnlen", "MMseqs_TopHit_eval",
+                        "MMseqs_TopHit_bitscore", "MMseqs_TopHit_qcov", "MMseqs_TopHit_lineage"]
+        df = df[column_order]
+        df.to_csv(extended_colabscan_out, sep="\t", index=False)
 
 
 
