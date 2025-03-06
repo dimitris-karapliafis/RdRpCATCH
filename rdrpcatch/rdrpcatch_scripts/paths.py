@@ -7,7 +7,7 @@ class classproperty(property):
         return classmethod(self.fget).__get__(None, owner)()
 
 @dataclass
-class colabscan_input:
+class rdrpcatch_input:
 
     #TODO: Change this line for final version
 
@@ -34,7 +34,7 @@ class colabscan_input:
 
 
 @dataclass
-class colabscan_output:
+class rdrpcatch_output:
 
     prefix: str
     output_dir: Path
@@ -120,11 +120,11 @@ class colabscan_output:
 
     @property
     def plot_outdir(self):
-        return self.output_dir / f"{self.prefix}_colabscan_plots"
+        return self.output_dir / f"{self.prefix}_rdrpcatch_plots"
 
     @property
     def fasta_output_dir(self):
-        return self.output_dir / f"{self.prefix}_colabscan_fasta"
+        return self.output_dir / f"{self.prefix}_rdrpcatch_fasta"
 
     @property
     def fasta_nuc_out_path(self):
@@ -134,24 +134,24 @@ class colabscan_output:
         return self.fasta_output_dir / f"{self.prefix}_transl_contigs.fasta"
 
     @property
-    def colabscan_output(self):
-        return self.tsv_outdir / f"{self.prefix}_colabscan_output.tsv"
+    def rdrpcatch_output(self):
+        return self.tsv_outdir / f"{self.prefix}_rdrpcatch_output.tsv"
 
     @property
-    def extended_colabscan_output(self):
-        return self.output_dir / f"{self.prefix}_colabscan_output_annotated.tsv"
+    def extended_rdrpcatch_output(self):
+        return self.output_dir / f"{self.prefix}_rdrpcatch_output_annotated.tsv"
     @property
     def log_dir(self):
         return self.tmp_dir / f"{self.prefix}_logs"
     @property
     def log_file(self):
-        return self.log_dir / f"{self.prefix}_colabscan.log"
+        return self.log_dir / f"{self.prefix}_rdrpcatch.log"
     @property
     def gff_output_dir(self):
         return self.output_dir / f"{self.prefix}_gff_files"
     @property
     def gff_output_path(self):
-        return self.gff_output_dir / f"{self.prefix}_colabscan.gff"
+        return self.gff_output_dir / f"{self.prefix}_rdrpcatch.gff"
 
 
 

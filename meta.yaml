@@ -1,5 +1,5 @@
 package:
-  name: colabscan
+  name: rdrpcatch
   version: '1.0.0'
 
 source:
@@ -17,7 +17,7 @@ build:
     $PYTHON -m pip install . --no-deps -vv
 
   entry_points:
-    - colabscan = colabscan.cli.args:cli
+    - rdrpcatch = rdrpcatch.cli.args:cli
   # Ensure pip dependencies are preserved
   preserve_egg_dir: True
 
@@ -45,7 +45,7 @@ requirements:
 
 test:
     commands:
-        - colabscan --help
+        - rdrpcatch --help
 
 about:
   home: https://github.com/dimitris-karapliafis/ColaB-Scan

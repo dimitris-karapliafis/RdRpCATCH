@@ -1,20 +1,20 @@
 """
-Wrapper for the ColabScan package.
+Wrapper for the RdRpCATCH package.
 
 """
-from .colabscan_scripts import utils
-from .colabscan_scripts import paths
-from .colabscan_scripts import run_pyhmmer
-from .colabscan_scripts import fetch_dbs
-from .colabscan_scripts import format_pyhmmer_out
+from .rdrpcatch_scripts import utils
+from .rdrpcatch_scripts import paths
+from .rdrpcatch_scripts import run_pyhmmer
+from .rdrpcatch_scripts import fetch_dbs
+from .rdrpcatch_scripts import format_pyhmmer_out
 import os
 from pathlib import Path
-from .colabscan_scripts import run_seqkit
-from .colabscan_scripts import plot
+from .rdrpcatch_scripts import run_seqkit
+from .rdrpcatch_scripts import plot
 import pandas as pd
 import warnings
-# from .colabscan_scripts import gui
-from .colabscan_scripts import mmseqs_tax
+# from .rdrpcatch_scripts import gui
+from .rdrpcatch_scripts import mmseqs_tax
 
 def main():
     pass
@@ -44,7 +44,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
 
     ## Set output directories
     prefix = Path(input_file).stem
-    outputs = paths.colabscan_output(prefix, Path(output_dir))
+    outputs = paths.rdrpcatch_output(prefix, Path(output_dir))
 
     ## Set up logger
     log_file = outputs.log_file
@@ -336,8 +336,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         utils.fasta(input_file).write_fasta(utils.fasta(input_file).extract_contigs(combined_set), outputs.fasta_nuc_out_path)
         if not os.path.exists(outputs.gff_output_dir):
             outputs.gff_output_dir.mkdir(parents=True)
-        format_pyhmmer_out.hmmsearch_output_writter().write_hmmsearch_hits(outputs.combined_tsv_path, seq_type, outputs.colabscan_output, outputs.gff_output_path)
-        rdrp_coords_list = format_pyhmmer_out.hmmsearch_output_writter().get_rdrp_coords(outputs.colabscan_output)
+        format_pyhmmer_out.hmmsearch_output_writter().write_hmmsearch_hits(outputs.combined_tsv_path, seq_type, outputs.rdrpcatch_output, outputs.gff_output_path)
+        rdrp_coords_list = format_pyhmmer_out.hmmsearch_output_writter().get_rdrp_coords(outputs.rdrpcatch_output)
         utils.fasta(outputs.seqkit_translate_output_path).write_fasta_coords(rdrp_coords_list,outputs.fasta_prot_out_path, seq_type)
 
         if verbose:
@@ -370,8 +370,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         mmseqs_tax.mmseqs(outputs.fasta_prot_out_path, mmseqs_db_path, outputs.mmseqs_e_search_output_dir,
                           outputs.mmseqs_e_search_output_path, 7, cpus, outputs.mmseqs_e_search_log_path).run_mmseqs_e_search()
 
-        utils.mmseqs_parser(outputs.mmseqs_tax_output_lca_path, outputs.mmseqs_e_search_output_path).tax_to_colabscan(
-            outputs.colabscan_output, outputs.extended_colabscan_output, seq_type)
+        utils.mmseqs_parser(outputs.mmseqs_tax_output_lca_path, outputs.mmseqs_e_search_output_path).tax_to_rdrpcatch(
+            outputs.rdrpcatch_output, outputs.extended_rdrpcatch_output, seq_type)
 
 
     elif seq_type == 'prot':
@@ -489,14 +489,14 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         if not os.path.exists(outputs.gff_output_dir):
             outputs.gff_output_dir.mkdir(parents=True)
 
-        format_pyhmmer_out.hmmsearch_output_writter().write_hmmsearch_hits(outputs.combined_tsv_path, seq_type, outputs.colabscan_output,outputs.gff_output_path)
-        rdrp_coords_list = format_pyhmmer_out.hmmsearch_output_writter().get_rdrp_coords(outputs.colabscan_output)
+        format_pyhmmer_out.hmmsearch_output_writter().write_hmmsearch_hits(outputs.combined_tsv_path, seq_type, outputs.rdrpcatch_output,outputs.gff_output_path)
+        rdrp_coords_list = format_pyhmmer_out.hmmsearch_output_writter().get_rdrp_coords(outputs.rdrpcatch_output)
         utils.fasta(input_file).write_fasta_coords(rdrp_coords_list,outputs.fasta_prot_out_path, seq_type)
 
         if verbose:
-            logger.loud_log(f"ColabScan output file written to: {outputs.fasta_prot_out_path}")
+            logger.loud_log(f"RdRpCATCH output file written to: {outputs.fasta_prot_out_path}")
         else:
-            logger.silent_log(f"ColabScan output file written to: {outputs.fasta_prot_out_path}")
+            logger.silent_log(f"RdRpCATCH output file written to: {outputs.fasta_prot_out_path}")
 
         if not os.path.exists(outputs.mmseqs_tax_output_dir):
             outputs.mmseqs_tax_output_dir.mkdir(parents=True)
@@ -521,8 +521,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         mmseqs_tax.mmseqs(outputs.fasta_prot_out_path, mmseqs_db_path, outputs.mmseqs_e_search_output_dir,
                           outputs.mmseqs_e_search_output_path, 7, cpus, outputs.mmseqs_e_search_log_path).run_mmseqs_e_search()
 
-        utils.mmseqs_parser(outputs.mmseqs_tax_output_lca_path, outputs.mmseqs_e_search_output_path).tax_to_colabscan(
-            outputs.colabscan_output, outputs.extended_colabscan_output, seq_type)
+        utils.mmseqs_parser(outputs.mmseqs_tax_output_lca_path, outputs.mmseqs_e_search_output_path).tax_to_rdrpcatch(
+            outputs.rdrpcatch_output, outputs.extended_rdrpcatch_output, seq_type)
 
 
 if __name__ == "__main__":

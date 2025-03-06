@@ -1,0 +1,19 @@
+name: rdrpcatch_test_env
+channels:
+# Use always conda-forge, bioconda in this row, and anaconda in the next row
+  - conda-forge
+  - bioconda
+dependencies:
+    - python=3.12
+    - bioconda::mmseqs2=13.45111
+    - bioconda::seqkit=2.9.0
+    - pip
+    - matplotlib=3.10.0
+    - biopython=1.78
+    - conda-forge::upsetplot=0.9.0
+    - anaconda::pandas=2.2.3
+    - pyhmmer=0.11.0
+    - rich=13.9.4
+    - rich-click=1.8.6
+    - seaborn=0.13.2
+prefix: /home/dimitris/miniconda3/envs/colabscan_env

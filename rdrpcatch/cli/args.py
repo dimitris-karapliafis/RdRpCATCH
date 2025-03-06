@@ -4,7 +4,7 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.syntax import Syntax
 from pathlib import Path
-from ..colabscanner_wrapper import run_scan, run_download
+from ..rdrpcatch_wrapper import run_scan, run_download
 
 console = Console()
 def parse_comma_separated_options(ctx, param, value):
@@ -26,7 +26,7 @@ def parse_comma_separated_options(ctx, param, value):
 
 @click.group()
 def cli():
-    """ColabScan: A package for scanning sequences for RNA virus RNA dependent RNA Polymerases."""
+    """RdRpCATCH: A package for scanning sequences for RNA virus RNA dependent RNA Polymerases."""
     pass
 
 
@@ -38,7 +38,7 @@ def cli():
               help="Path to the output directory.",
               type=click.Path(exists=False, file_okay=False, writable=True, path_type=Path), required=True)
 @click.option("-db_dir", "--db_dir",
-              help="Path to the directory containing colabscan databases.",
+              help="Path to the directory containing RdRpCATCH databases.",
               type=click.Path(exists=True, dir_okay=True, readable=True, path_type=Path),required=True)
 @click.option("-dbs", "--db_options",
               callback=parse_comma_separated_options,
@@ -131,14 +131,14 @@ def scan(ctx, input, output, db_options, db_dir, seq_type, verbose, evalue,
     )
 
 
-@cli.command("download", help="Download ColabScan databases.")
+@cli.command("download", help="Download RdRpCATCH databases.")
 @click.option('-dest', '--destination_dir',
               help="Path to the directory to download HMM databases.",
               default=None,
               type=click.Path(exists=False, dir_okay=True, writable=True, path_type=Path), required=True)
 @click.pass_context
 def download(ctx, destination_dir):
-    """Download ColabScan databases"""
+    """Download RdRpCATCH databases"""
 
     console.print(Panel(f"Downloading databases to: {destination_dir}", title="Download Status"))
     run_download(destination_dir=destination_dir)

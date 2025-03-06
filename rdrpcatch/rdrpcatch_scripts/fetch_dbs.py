@@ -10,7 +10,7 @@ class db_fetcher:
 
     def fetch_hmm_db_path(self, db_name):
         """
-        Fetches HMM database from the colabscanner repository
+        Fetches HMM database from the RdRpCATCH repository
         """
         if not os.path.exists(self.db_dir):
             raise FileNotFoundError(f"db_dir does not exist {self.db_dir}")
@@ -36,7 +36,7 @@ class db_fetcher:
 
     def fetch_mmseqs_db_path(self, db_name):
         """
-        Fetches MMseqs database from the colabscanner repository
+        Fetches MMseqs database from the RdRpCATCH repository
         """
         if not os.path.exists(self.db_dir):
             raise FileNotFoundError(f"db_dir does not exist {self.db_dir}")

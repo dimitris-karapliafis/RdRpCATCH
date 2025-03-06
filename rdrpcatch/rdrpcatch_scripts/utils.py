@@ -204,12 +204,12 @@ class mmseqs_parser:
 
         return tophit_dict
 
-    def tax_to_colabscan(self, colabscan_out, extended_colabscan_out, seq_type):
+    def tax_to_rdrpcatch(self, rdrpcatch_out, extended_rdrpcatch_out, seq_type):
 
         lca_dict = self.parse_mmseqs_tax_lca()
         tophit_dict = self.parse_mmseqs_e_search_tophit()
 
-        with open(colabscan_out, "r") as f_handle, open(extended_colabscan_out, 'w') as out_handle:
+        with open(rdrpcatch_out, "r") as f_handle, open(extended_rdrpcatch_out, 'w') as out_handle:
 
             for line in f_handle:
                 line = line.strip().split("\t")
@@ -255,7 +255,7 @@ class mmseqs_parser:
 
                     out_handle.write("\t".join(line) + "\n")
 
-        df = pd.read_csv(extended_colabscan_out, sep="\t")
+        df = pd.read_csv(extended_rdrpcatch_out, sep="\t")
         df = df.drop(["Best_hit_norm_bitscore_profile", "Best_hit_norm_bitscore_contig","Best_hit_ID_score", "Best_hit_aln_length"], axis=1)
         column_order = ["#Contig_name","Translated_contig_name (frame)",
                         "Sequence_length(AA)","Total_databases_that_the_contig_was_detected(No_of_Profiles)",
@@ -265,7 +265,7 @@ class mmseqs_parser:
                         "MMseqs_TopHit_fident", "MMseqs_TopHit_alnlen", "MMseqs_TopHit_eval",
                         "MMseqs_TopHit_bitscore", "MMseqs_TopHit_qcov", "MMseqs_TopHit_lineage"]
         df = df[column_order]
-        df.to_csv(extended_colabscan_out, sep="\t", index=False)
+        df.to_csv(extended_rdrpcatch_out, sep="\t", index=False)
 
 
 

@@ -518,7 +518,7 @@ class hmmsearch_output_writter:
                     profile_coverage = line[16]
                     contig_coverage = line[17]
 
-                    out_handle.write(f"{translated_seq_name}\tColabScan\tRdRp_domain\t{rdrp_start}\t{rdrp_end}"
+                    out_handle.write(f"{translated_seq_name}\tRdRpCATCH\tRdRp_domain\t{rdrp_start}\t{rdrp_end}"
                                      f"\t{bitscore}\t+\t.\tID={contig_name};Profile_Name={profile_name};"
                                      f" Profile_Db={db_name};E-value={e_value};Bitscore={bitscore};"
                                      f"Norm_bitscore_profile={norm_bitscore_profile};"
@@ -544,7 +544,7 @@ class hmmsearch_output_writter:
                     aln_length = line[15]
                     profile_coverage = line[16]
                     contig_coverage = line[17]
-                    out_handle.write(f"{contig_name}\tColabScan\tRdRp_domain\t{rdrp_start}\t{rdrp_end}\t{bitscore}\t."
+                    out_handle.write(f"{contig_name}\tRdRpCATCH\tRdRp_domain\t{rdrp_start}\t{rdrp_end}\t{bitscore}\t."
                                      f"\t.\tID={contig_name};Profile_Name={profile_name}; Profile_Db={db_name};"
                                      f"E-value={e_value};Bitscore={bitscore};"
                                      f"Norm_bitscore_profile={norm_bitscore_profile};"
