@@ -13,7 +13,7 @@ from .colabscan_scripts import run_seqkit
 from .colabscan_scripts import plot
 import pandas as pd
 import warnings
-from .colabscan_scripts import gui
+# from .colabscan_scripts import gui
 from .colabscan_scripts import mmseqs_tax
 
 def main():
@@ -27,10 +27,10 @@ def run_download(destination_dir):
     fetch_dbs.db_downloader(Path(destination_dir)).del_tar()
 
 
-def run_gui():
-
-    gui_runner = gui.colabscanner_gui()
-    gui_runner.run()
+# def run_gui():
+#
+#     gui_runner = gui.colabscanner_gui()
+#     gui_runner.run()
 
 
 def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,incdomE,domE,incE,z, cpus, length_thr, gen_code):
@@ -393,6 +393,10 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             start_hmmsearch_time = logger.start_timer()
             hmm_out = run_pyhmmer.pyhmmsearch(outputs.hmm_output_path(db_name), input_file, db_path, cpus, e, incdomE, domE, incE, z).run_pyhmmsearch()
             end_hmmsearch_time = logger.stop_timer(verbose)
+            if verbose:
+                logger.loud_log(f"{db_name} HMMsearch Runtime: {end_hmmsearch_time}")
+            else:
+                logger.silent_log(f"{db_name} HMMsearch Runtime: {end_hmmsearch_time}")
 
             if verbose:
                 logger.loud_log(f"Pyhmmer output written to: {hmm_out}")
@@ -497,11 +501,22 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         if not os.path.exists(outputs.mmseqs_tax_output_dir):
             outputs.mmseqs_tax_output_dir.mkdir(parents=True)
 
+        if verbose:
+            logger.loud_log("Running mmseqs easy-taxonomy for taxonomic annotation.")
+        else:
+            logger.silent_log("Running mmseqs easy-taxonomy for taxonomic annotation.")
+
+
         mmseqs_tax.mmseqs(outputs.fasta_prot_out_path, mmseqs_db_path, outputs.mmseqs_tax_output_prefix,
                           outputs.mmseqs_tax_output_dir, 7, cpus, outputs.mmseqs_tax_log_path).run_mmseqs_easy_tax_lca()
 
         if not os.path.exists(outputs.mmseqs_e_search_output_dir):
             outputs.mmseqs_e_search_output_dir.mkdir(parents=True)
+
+        if verbose:
+            logger.loud_log("Running mmseqs easy-search for taxonomic annotation.")
+        else:
+            logger.silent_log("Running mmseqs easy-search for taxonomic annotation.")
 
         mmseqs_tax.mmseqs(outputs.fasta_prot_out_path, mmseqs_db_path, outputs.mmseqs_e_search_output_dir,
                           outputs.mmseqs_e_search_output_path, 7, cpus, outputs.mmseqs_e_search_log_path).run_mmseqs_e_search()

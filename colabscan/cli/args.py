@@ -4,7 +4,7 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.syntax import Syntax
 from pathlib import Path
-from ..colabscanner_wrapper import run_scan, run_download, run_gui
+from ..colabscanner_wrapper import run_scan, run_download
 
 console = Console()
 def parse_comma_separated_options(ctx, param, value):
@@ -24,16 +24,6 @@ def parse_comma_separated_options(ctx, param, value):
     return lower_options
 
 
-# @click.group(
-#     help="ColabScan: A package for scanning sequences for RNA virus RNA dependent RNA Polymerases.",
-#     context_settings={"help_option_names": ["-h", "--help"]},
-#     cls=click.CommandCollection,
-#     sources=[
-#         click.CommandCollection(sources=[click.Group("scan")]),
-#         click.CommandCollection(sources=[click.Group("download")]),
-#         click.CommandCollection(sources=[click.Group("gui")])
-#     ]
-# )
 @click.group()
 def cli():
     """ColabScan: A package for scanning sequences for RNA virus RNA dependent RNA Polymerases."""
@@ -154,13 +144,13 @@ def download(ctx, destination_dir):
     run_download(destination_dir=destination_dir)
 
 
-@cli.command("gui", help="Launch the GUI.")
-@click.pass_context
-def gui(ctx):
-    """Launch the GUI."""
-
-    console.print(Panel("Starting ColabScan GUI...", title="GUI Launch"))
-    run_gui()
+# @cli.command("gui", help="Launch the GUI.")
+# @click.pass_context
+# def gui(ctx):
+#     """Launch the GUI."""
+#
+#     console.print(Panel("Starting ColabScan GUI...", title="GUI Launch"))
+#     run_gui()
 
 
 if __name__ == '__main__':

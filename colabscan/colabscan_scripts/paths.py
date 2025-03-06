@@ -142,13 +142,13 @@ class colabscan_output:
         return self.output_dir / f"{self.prefix}_colabscan_output_annotated.tsv"
     @property
     def log_dir(self):
-        return self.tmp_dir / "logs"
+        return self.tmp_dir / f"{self.prefix}_logs"
     @property
     def log_file(self):
         return self.log_dir / f"{self.prefix}_colabscan.log"
     @property
     def gff_output_dir(self):
-        return self.output_dir / "gff_files"
+        return self.output_dir / f"{self.prefix}_gff_files"
     @property
     def gff_output_path(self):
         return self.gff_output_dir / f"{self.prefix}_colabscan.gff"

@@ -22,7 +22,7 @@ class db_fetcher:
                 for dir_ in os.listdir(os.path.join(self.db_dir, dir)):
                     if dir_ == db_name:
                         for file in os.listdir(os.path.join(self.db_dir, dir, dir_)):
-                            if file.endswith(".hmm") or file.endswith(".h3m" or file.endswith(".h3i")) or file.endswith(".h3f") or file.endswith(".h3p"):
+                            if file.endswith(".h3m") :
                                 db_fn = file.rsplit(".",1)[0]
                                 db_path = os.path.join(self.db_dir, dir,dir_, db_fn)
                             else:
@@ -63,7 +63,7 @@ class db_fetcher:
 class db_downloader:
 
     def __init__(self,destination_dir):
-        self.base_url = "https://zenodo.org/records/14358349/files/hmm_dbs.tar?download=1"
+        self.base_url = "https://zenodo.org/records/14936013/files/colabscan_dbs.tar?download=1"
         self.destination_dir = destination_dir
 
     def download_db(self):
@@ -78,7 +78,7 @@ class db_downloader:
             print(f"{self.destination_dir} already exists")
 
         print(f"Downloading hmm databases to {self.destination_dir}")
-        os.system(f"wget -O {self.destination_dir}/hmm_dbs.tar {self.base_url}")
+        os.system(f"wget -O {self.destination_dir}/colabscan_dbs.tar {self.base_url}")
 
 
     def extract_db(self):
@@ -87,7 +87,7 @@ class db_downloader:
         :return:
         '''
         print(f"Extracting hmm databases to {self.destination_dir}")
-        os.system(f"tar -xvf {self.destination_dir}/hmm_dbs.tar -C {self.destination_dir}")
+        os.system(f"tar -xvf {self.destination_dir}/colabscan_dbs.tar -C {self.destination_dir}")
         print(f"Extraction complete")
 
     def del_tar(self):
@@ -96,7 +96,7 @@ class db_downloader:
         :return:
         '''
         print(f"Deleting tar file")
-        os.system(f"rm {self.destination_dir}/hmm_dbs.tar")
+        os.system(f"rm {self.destination_dir}/colabscan_dbs.tar")
         print(f"Deletion complete")
 
 
