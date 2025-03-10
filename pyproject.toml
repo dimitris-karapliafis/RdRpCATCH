@@ -28,8 +28,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/dimitris-karapliafis/ColaB-Scan"
-Repository = "https://github.com/dimitris-karapliafis/ColaB-Scan"
+Homepage = "https://github.com/dimitris-karapliafis/RdRpCATCH"
+Repository = "https://github.com/dimitris-karapliafis/RdRpCATCH"
 
 [project.scripts]
 rdrpcatch = "rdrpcatch.cli.args:cli"

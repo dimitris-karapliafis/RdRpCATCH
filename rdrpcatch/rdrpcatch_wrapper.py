@@ -15,16 +15,21 @@ import pandas as pd
 import warnings
 # from .rdrpcatch_scripts import gui
 from .rdrpcatch_scripts import mmseqs_tax
+from rich.console import Console
 
 def main():
     pass
 
 def run_download(destination_dir):
 
+    console = Console()
 
     fetch_dbs.db_downloader(Path(destination_dir)).download_db()
     fetch_dbs.db_downloader(Path(destination_dir)).extract_db()
     fetch_dbs.db_downloader(Path(destination_dir)).del_tar()
+    console.log(f"RdRp databases downloaded and extracted successfully. Databases are stored in:\n"
+                f"{destination_dir}/DBs ")
+    
 
 
 # def run_gui():
