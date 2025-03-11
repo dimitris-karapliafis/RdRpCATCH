@@ -11,7 +11,7 @@ library to perform pHMM searches. The tool scans each sequence in the input file
 hit with the highest bitscore across all databases as the best hit. In addition, the tool provides information about the number of profiles
 that were positive for each sequence across all databases, and taxonomic information based on the MMseqs2 easy-taxonomy and search modules against a custom RefSeq Riboviria database.
 
-![rdrpcatch_flowchart_v1.png](images%2Frdrpcatch_flowchart_v1.png)
+![rdrpcatch_flowchart_v0.png](images%2Frdrpcatch_flowchart_v0.png)
 
 Supported databases
 - NeoRdRp  
