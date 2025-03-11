@@ -27,7 +27,7 @@ class mmseqs:
                                "1",
                                "--alignment-mode",
                                "3",
-                               "--start-sens",
+                               "-s",
                                str(self.sens),
                                "--threads",
                                str(self.cpus)
