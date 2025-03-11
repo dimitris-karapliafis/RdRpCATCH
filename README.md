@@ -23,31 +23,36 @@ Supported databases
 - LucaProt_pHMM
 
 ## Installation
+
+### Installation instructions for testing phase
+
 RdRpCATCH will be available as a bioconda package soon. For the testing phase, we provide a tarball and a .yaml file to
 install the tool and its dependencies. The .tar.bz2 is created for Linux systems but should work on MacOS as well.
 (Windows is not supported)
 
+#### Prerequisites
 For the installation process, conda is required. If you don't have conda installed, you can find instructions on how to
 https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html
+
+#### Installation steps
 
 To install RdRpCATCH, follow these steps:
 
 Start by downloading the tarball and the .yaml file from the testing/ directory of this repository:
-- rdrpcatch-1.0.0-py312_1.tar.bz2
+- rdrpcatch-1.0.0-py312_2.tar.bz2
 - rdrpcatch_test_env.yaml
 
-First, create a new conda environment with the dependencies required for RdRpCATCH:
+Create a new conda environment with the dependencies required for RdRpCATCH, using the .yaml file:
 
 ```conda env create -f rdrpcatch_test_env.yaml```
-
 
 Activate the environment:
 
 ```conda activate rdrpcatch_test_env```
 
-Finally, install the RdRpCATCH tarball:
+Install the RdRpCATCH tarball:
 
-```conda install  path/to/rdrpcatch-1.0.0-py312_1.tar.bz2```
+```conda install  path/to/rdrpcatch-1.0.0-py312_2.tar.bz2```
 
 Test the installation by running:
 
