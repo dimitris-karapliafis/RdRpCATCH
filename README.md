@@ -14,13 +14,14 @@ that were positive for each sequence across all databases, and taxonomic informa
 ![rdrpcatch_flowchart_v0.png](images%2Frdrpcatch_flowchart_v0.png)
 
 Supported databases
-- NeoRdRp  
-- NeoRdRp2 
-- RVMT
-- RdRp-Scan
-- TSA_Oleandrite_fam
-- TSA_Oleandrite_gen
-- LucaProt_pHMM
+- NeoRdRp: 1182 pHMMs from [^1] 
+- NeoRdRp2: 19394 pHMMs from [^2] 
+- RVMT: 710 pHMMs from [^3] 
+- RdRp-Scan: 68 pHMMs from [^4] 
+- TSA_Oleandrite_fam: 77 pHMMs from [^5] 
+- TSA_Oleandrite_gen: 341 pHMMs from [^6] 
+- LucaProt_pHMM: 754 pHMMs from [^7] 
+
 
 ## Installation
 
@@ -168,6 +169,25 @@ The following two commands are available in RdRpCATCH:
 ## Contributing
 
 ## Citations
+
+## References
+
+RdRpCATCH utilizes several databases for RdRp identification:
+
+1. [^1] Sakaguchi, S. et al. (2022) 'NeoRdRp: A comprehensive dataset for identifying RNA-dependent RNA polymerases of various RNA viruses from metatranscriptomic data', *Microbes and Environments*, 37(3). [doi:10.1264/jsme2.me22001](https://doi.org/10.1264/jsme2.me22001)
+
+2. [^2] Sakaguchi, S., Nakano, T. and Nakagawa, S. (2024) 'Neordrp2 with improved seed data, annotations, and scoring', *Frontiers in Virology*, 4. [doi:10.3389/fviro.2024.1378695](https://doi.org/10.3389/fviro.2024.1378695)
+
+3. [^3] Neri, U. et al. (2022) 'Expansion of the global RNA virome reveals diverse clades of bacteriophages', *Cell*, 185(21). [doi:10.1016/j.cell.2022.08.023](https://doi.org/10.1016/j.cell.2022.08.023)
+
+4. [^4] Charon, J. et al. (2022) 'RDRP-Scan: A bioinformatic resource to identify and annotate divergent RNA viruses in metagenomic sequence data', *Virus Evolution*, 8(2). [doi:10.1093/ve/veac082](https://doi.org/10.1093/ve/veac082)
+
+5. [^5] Olendraite, I., Brown, K. and Firth, A.E. (2023) 'Identification of RNA virus–derived rdrp sequences in publicly available transcriptomic data sets', *Molecular Biology and Evolution*, 40(4). [doi:10.1093/molbev/msad060](https://doi.org/10.1093/molbev/msad060)
+
+6. [^6] Olendraite, I. (2021) 'Mining diverse and novel RNA viruses in transcriptomic datasets', Apollo. Available at: [https://www.repository.cam.ac.uk/items/1fabebd2-429b-45c9-b6eb-41d27d0a90c2](https://www.repository.cam.ac.uk/items/1fabebd2-429b-45c9-b6eb-41d27d0a90c2)
+
+7. [^7] Hou, X. et al. (2024) 'Using artificial intelligence to document the hidden RNA virosphere', *Cell*, 187(24). [doi:10.1016/j.cell.2024.09.027](https://doi.org/10.1016/j.cell.2024.09.027)
+
 
 ## Acknowledgements
 
