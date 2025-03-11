@@ -59,14 +59,14 @@ class rdrpcatch_output:
 
     @property
     def best_hit_dir(self):
-        return self.output_dir / self.tmp_dir / "best_hit_hmm_output"
+        return self.tmp_dir / "best_hit_hmm_output"
 
     def best_hit_path(self, db_name):
         return self.best_hit_dir / f"{self.prefix}_{db_name}_hmm_output_best_hit.txt"
 
     @property
     def seqkit_seq_output_dir(self):
-        return self.output_dir / self.tmp_dir/ "seqkit_seq_output"
+        return self.tmp_dir/ "seqkit_seq_output"
 
     @property
     def seqkit_seq_output_path(self):
@@ -74,7 +74,7 @@ class rdrpcatch_output:
 
     @property
     def seqkit_translate_output_dir(self):
-        return self.output_dir / self.tmp_dir/ "seqkit_translate_output"
+        return self.tmp_dir/ "seqkit_translate_output"
 
     @property
     def seqkit_translate_output_path(self):
@@ -83,14 +83,14 @@ class rdrpcatch_output:
 
     @property
     def tsv_outdir(self):
-        return self.output_dir /self.tmp_dir/ "tsv_files"
+        return self.tmp_dir/ "tsv_files"
     @property
     def combined_tsv_path(self):
         return self.tsv_outdir / f"{self.prefix}_combined.tsv"
 
     @property
     def mmseqs_tax_output_dir(self ):
-        return self.output_dir / self.tmp_dir/ "mmseqs_tax_output"
+        return self.tmp_dir/ "mmseqs_tax_output"
 
     @property
     def mmseqs_tax_output_prefix(self):
@@ -105,7 +105,7 @@ class rdrpcatch_output:
         return self.mmseqs_tax_output_dir / f"{self.prefix}_mmseqs_tax_lca.tsv"
     @property
     def mmseqs_e_search_output_dir(self):
-        return self.output_dir / self.tmp_dir/ "mmseqs_e_search_output"
+        return self.tmp_dir/ "mmseqs_e_search_output"
     @property
     def mmseqs_e_search_log_path(self):
         return self.log_dir/ f"{self.prefix}_mmseqs_e_search.log"
