@@ -165,19 +165,7 @@ If you use RdRpCATCH, please cite the following third party databases:
 RdRpCATCH is a collaborative effort and we would like to thank all the authors and developers of the underling databases. 
 
 ## Contact
-Dimitris Karapliafis (dimitris.karapliafis {#{at}#}gmail dot com)
-
-
-## Changes from Original Version
-
-This fork includes several improvements and modifications compared to the original RdRpCATCH:
-
-1. Integration with rolypoly code/approaches for enhanced functionality (and future compatibility)
-2. Results bundling - output files and directories aretimestamped and archived as a tar.gz 
-3. Improved error handling and logging 
-4. Replace pandas with polars 
-5. Replace biopython with needletail
-6. Use altair for interactive plots.
+Dimitris Karapliafis (dimitris.karapliafis), potentially via slack/teams or an issue in the main repo.
 
 ##TODO:
 - [ ] loud logging is linking to the utils.py file, not the actual line of code causing the error.
