@@ -1,0 +1,12 @@
+100.0000	44	0	no rank	1	root
+100.0000	44	0	superkingdom	10239	  Viruses
+100.0000	44	8	clade	2559587	    Riboviria
+65.9091	29	0	no rank	2585030	      unclassified Riboviria
+65.9091	29	0	no rank	439490	        unclassified ssRNA viruses
+65.9091	29	0	clade	35278	          unclassified ssRNA positive-strand viruses
+65.9091	29	29	species	640897	            Phytophthora infestans RNA virus 1
+15.9091	7	0	kingdom	2732396	      Orthornavirae
+15.9091	7	0	phylum	2732408	        Pisuviricota
+15.9091	7	0	class	2732507	          Stelpaviricetes
+15.9091	7	0	order	2732550	            Patatavirales
+15.9091	7	7	family	39729	              Potyviridae

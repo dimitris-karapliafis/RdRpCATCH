@@ -1,14 +1,84 @@
 import logging
 import time
 from rich.console import Console
-from Bio import SeqIO
 import os
-import pandas as pd
+import polars as pl
+import needletail
+
+
+def write_combined_results_to_gff(output_file, combined_data):
+    with open(output_file, 'w') as f:
+        f.write("##gff-version 3\n")
+        for row in combined_data.iter_rows(named=True):
+            record = convert_record_to_gff3_record(row)
+            f.write(f"{record}\n")
+
+def convert_record_to_gff3_record(row): # for dict objects expected to be coherced into a gff3
+    # taken from rolypoly https://code.jgi.doe.gov/UNeri/rolypoly/-/blob/main/src/rolypoly/commands/annotation/annotate_RNA.py
+    
+    # try to identify a sequence_id columns (query, qseqid, contig_id, contig, id, name)
+    sequence_id_columns = ["sequence_id",'query', 'qseqid', 'contig_id', 'contig', 'id', 'name','Contig_name']
+    sequence_id_col = next((col for col in sequence_id_columns if col in row.keys()), None)
+    if sequence_id_col is None:
+        raise ValueError(f"No sequence ID column found in row. Available columns: {list(row.keys())}")
+    
+    # try to identify a score column (score, Score, bitscore, qscore, bit)
+    score_columns = ["score", "Score", "bitscore", "qscore", "bit","bits"]
+    score_col = next((col for col in score_columns if col in row.keys()), "score")
+    
+    # try to identify a source column (source, Source, db, DB)
+    source_columns = ["source", "Source", "db", "DB"]
+    source_col = next((col for col in source_columns if col in row.keys()), "source")
+    
+    # try to identify a type column (type, Type, feature, Feature)
+    type_columns = ["type", "Type", "feature", "Feature"]
+    type_col = next((col for col in type_columns if col in row.keys()), "type")
+    
+    # try to identify a strand column (strand, Strand, sense, Sense)
+    strand_columns = ["strand", "Strand", "sense", "Sense"]
+    strand_col = next((col for col in strand_columns if col in row.keys()), "strand")
+    
+    # try to identify a phase column (phase, Phase)
+    phase_columns = ["phase", "Phase"]
+    phase_col = next((col for col in phase_columns if col in row.keys()), "phase")
+    
+    # Build GFF3 attributes string
+    attrs = []
+    for key, value in row.items():
+        if key not in [sequence_id_col, source_col, score_col, type_col, strand_col, phase_col]:
+            attrs.append(f"{key}={value}")
+    
+    # Get values, using defaults for missing columns
+    sequence_id = row[sequence_id_col]
+    source = row.get(source_col, "rp")
+    score = row.get(score_col, "0")
+    feature_type = row.get(type_col, "feature")
+    strand = row.get(strand_col, "+")
+    phase = row.get(phase_col, ".")
+    
+    # Format GFF3 record
+    gff3_fields = [
+        sequence_id,
+        source,
+        feature_type,
+        str(row.get("start", "1")),
+        str(row.get("end", "1")),
+        str(score),
+        strand,
+        phase,
+        ";".join(attrs) if attrs else "."
+    ]
+    
+    return "\t".join(gff3_fields)
+
+
+
+
 
 class Logger:
    def __init__(self, log_file):
        self.console = Console()
-       self.log_file = log_file
+       self.log_file = log_file 
        self.logger = logging.getLogger('Logger')
        self.logger.setLevel(logging.INFO)
        handler = logging.FileHandler(self.log_file)
@@ -42,138 +112,183 @@ class Logger:
 
 class fasta_checker:
 
-    def __init__(self, fasta_file):
+    def __init__(self, fasta_file, logger=None):
         self.fasta_file = fasta_file
-
+        self.logger = logger
 
     def check_fasta_validity(self):
-
-        with open(self.fasta_file, 'r') as f:
-            first_line = f.readline()
-            if not first_line.startswith('>'):
-                raise Exception(f"Invalid fasta file: {self.fasta_file}, first line is {first_line}")
-            else:
-                return True
+        reader = needletail.parse_fastx_file(self.fasta_file)
+        try:
+            first_record = next(reader)
+            if self.logger:
+                self.logger.silent_log(f"Successfully validated fasta file: {self.fasta_file}")
+            return True
+        except StopIteration:
+            error_msg = f"Invalid or empty fasta file: {self.fasta_file}"
+            if self.logger:
+                self.logger.silent_log(error_msg)
+            raise Exception(error_msg)
+        except Exception as e:
+            error_msg = f"Invalid fasta file: {self.fasta_file}, error: {str(e)}"
+            if self.logger:
+                self.logger.silent_log(error_msg)
+            raise Exception(error_msg)
 
     def read_fasta(self):
-        with open(self.fasta_file, 'r') as f:
-            fasta_dict = {}
-            for line in f:
-                if line.startswith('>'):
-                    header = line.strip()
-                    fasta_dict[header] = ''
-                else:
-                    fasta_dict[header] += line.strip()
-            return fasta_dict
+        fasta_dict = {}
+        reader = needletail.parse_fastx_file(self.fasta_file)
+        for record in reader:
+            header = f">{record.id}"
+            fasta_dict[header] = record.seq
+        if self.logger:
+            self.logger.silent_log(f"Read {len(fasta_dict)} sequences from {self.fasta_file}")
+        return fasta_dict
 
     def check_seq_type(self):
-
-        fasta_dict = self.read_fasta()
-
-        seq_type = ''
+        reader = needletail.parse_fastx_file(self.fasta_file)
         dna_set = {'A', 'T', 'G', 'C'}
         dna_set_ambiguous = {'A', 'T', 'G', 'C', 'N'}
-        protein_set =  {'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', 'X'}
-        for header, seq in fasta_dict.items():
+        protein_set = {'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', 'X'}
+        
+        for record in reader:
+            seq = record.seq.upper()
             if set(seq).issubset(dna_set):
-                seq_type = 'nuc'
-            elif set(seq).issubset(set(dna_set_ambiguous)):
-                seq_type = 'nuc'
+                if self.logger:
+                    self.logger.silent_log(f"Detected nucleotide sequence (strict DNA alphabet)")
+                return 'nuc'
+            elif set(seq).issubset(dna_set_ambiguous):
+                if self.logger:
+                    self.logger.silent_log(f"Detected nucleotide sequence (ambiguous DNA alphabet)")
+                return 'nuc'
             elif set(seq).issubset(protein_set):
-                seq_type = 'prot'
+                if self.logger:
+                    self.logger.silent_log(f"Detected protein sequence")
+                return 'prot'
             else:
-                raise Exception(f"Invalid sequence type in fasta file: {self.fasta_file} for sequence: {header} with sequence: {set(seq)}")
-
-        return seq_type
+                error_msg = f"Invalid sequence type in fasta file: {self.fasta_file} for sequence: {record.id.encode()} with sequence: {set(seq)}"
+                if self.logger:
+                    self.logger.silent_log(error_msg)
+                raise Exception(error_msg)
 
     def check_seq_length(self, max_len):
-        """
-        Check the length of sequences in a FASTA file using Biopython.
-
-        Args:
-            fasta_file_path (str): Path to the FASTA file.
-            max_allowed_length (int): Maximum allowed length for sequences.
-
-        Raises:
-            FileNotFoundError: If the file does not exist.
-            ValueError: If any sequence exceeds the maximum allowed length.
-        """
-        ## Check if the file exists
         if not os.path.isfile(self.fasta_file):
-            raise FileNotFoundError(f"The file '{self.fasta_file}' does not exist.")
+            error_msg = f"The file '{self.fasta_file}' does not exist."
+            if self.logger:
+                self.logger.silent_log(error_msg)
+            raise FileNotFoundError(error_msg)
 
-        ## Parse the FASTA file
-        for record in SeqIO.parse(self.fasta_file, "fasta"):
+        reader = needletail.parse_fastx_file(self.fasta_file)
+        for record in reader:
             if len(record.seq) > max_len:
-                raise ValueError(f"Sequence ID: {record.id}, Description: {record.description}. "
-                                 f"Length: {len(record.seq)}, Exceeds maximum allowed length: {max_len}. Please check the input file, "
-                                 f"as this will cause issues with the pyHMMER search.")
-
+                error_msg = f"Sequence ID: {record.id}, Length: {len(record.seq)}, " \
+                           f"Exceeds maximum allowed length: {max_len}. Please check the input file, " \
+                           f"as this will cause issues with the pyHMMER search."
+                if self.logger:
+                    self.logger.silent_log(error_msg)
+                raise ValueError(error_msg)
+        if self.logger:
+            self.logger.silent_log(f"All sequences are within length limit of {max_len}")
         return True
 
 
 
 class fasta:
 
-    def __init__(self, fasta_file):
+    def __init__(self, fasta_file, logger=None):
         self.fasta_file = fasta_file
+        self.logger = logger
 
 
     def extract_contigs(self, contig_list):
-        record_list = []
-        with open(self.fasta_file, 'r') as f:
-            for record in SeqIO.parse(f, "fasta"):
-                if record.id in contig_list:
-                    record_list.append(record)
+        """
+        Extract contigs from a fasta file based on a list of contig names.
 
-        return record_list
+        :param contig_list: List of contig names to extract.
+        :type contig_list: list
+        :return: Dictionary with contig names as keys and sequences as values.
+        :rtype: dict
+        """
+        contig_dict = {}
+        reader = needletail.parse_fastx_file(self.fasta_file)
+        for record in reader:
+            if record.id in contig_list:
+                contig_dict[record.id] = record.seq
+        return contig_dict
 
-    def write_fasta(self, record_list, output_file):
+    def write_fasta(self, contig_dict, outfile):
+        """
+        Write a dictionary of contigs to a fasta file.
 
-        with open(output_file, 'w') as f:
-            SeqIO.write(record_list, f, "fasta")
-        return output_file
+        :param contig_dict: Dictionary with contig names as keys and sequences as values.
+        :type contig_dict: dict
+        :param outfile: Path to the output file.
+        :type outfile: str
+        :return: None
+        """
+        with open(outfile, 'w') as out_handle:
+            for contig_name, seq in contig_dict.items():
+                out_handle.write(f">{contig_name}\n{seq}\n")
 
-    def write_fasta_coords(self, coords_list, output_file, seq_type):
+    def write_fasta_coords(self, rdrp_coords_list, outfile, seq_type):
+        """
+        Write a list of RdRp coordinates to a fasta file.
 
-
-        if seq_type == 'nuc':
-            contigs = [coords[1] for coords in coords_list]
-        else:
-            contigs = [coords[0] for coords in coords_list]
-
-        record_list = self.extract_contigs(contigs)
-
-        with open(output_file, 'w') as f:
-            for record in record_list:
-                for coord in coords_list:
-                    if seq_type == 'nuc':
-                        if record.id == coord[1]:
-                            record.id = record.id + f"_RdRp_start:{coord[2]}_end:{coord[3]}"
-                            SeqIO.write(record, f, "fasta")
-                    elif seq_type == 'prot':
-                        if record.id == coord[0]:
-                            record.id = record.id + f"_RdRp_start:{coord[2]}_end:{coord[3]}"
-                            SeqIO.write(record, f, "fasta")
+        :param rdrp_coords_list: List of tuples containing contig name and RdRp coordinates.
+        :type rdrp_coords_list: list
+        :param outfile: Path to the output file.
+        :type outfile: str
+        :param seq_type: Type of sequence (prot or nuc).
+        :type seq_type: str
+        :return: None
+        """
+        if self.logger:
+            self.logger.silent_log(f"Processing {len(rdrp_coords_list)} coordinates")
+            self.logger.silent_log(f"First few coordinates: {rdrp_coords_list[:3]}")
+        
+        reader = needletail.parse_fastx_file(self.fasta_file)
+        matches_found = 0
+        with open(outfile, 'w') as out_handle:
+            for record in reader:
+                record_id = record.id.strip()
+                if self.logger:
+                    self.logger.silent_log(f"Processing record with ID: '{record_id}'")
+                for contig_name, rdrp_from, rdrp_to in rdrp_coords_list:
+                    contig_name = str(contig_name).strip()
+                    if self.logger:
+                        self.logger.silent_log(f"Comparing record '{record_id}' with contig '{contig_name}'")
+                    if record_id == contig_name:
+                        matches_found += 1
+                        seq = record.seq[rdrp_from-1:rdrp_to]
+                        out_handle.write(f">{record_id}\n{seq}\n")
+                        if self.logger:
+                            self.logger.silent_log(f"Match found! Writing sequence of length {len(seq)}")
                     else:
-                        raise Exception(f"Invalid sequence type: {seq_type}")
-        return output_file
+                        if self.logger:
+                            self.logger.silent_log(f"No match - lengths: {len(record_id)}|{len(contig_name)}, "
+                                                 f"record_id bytes: {record_id.encode()}, contig bytes: {contig_name.encode()}")
+        
+        if self.logger:
+            self.logger.silent_log(f"Total matches found: {matches_found}")
 
 
 class mmseqs_parser:
 
     def __init__(self, mmseqs_tax_out_file, mmseqs_s_out_file):
-
         self.mmseqs_tax_out_file = mmseqs_tax_out_file
         self.mmseqs_s_out_file = mmseqs_s_out_file
 
 
     def parse_mmseqs_tax_lca(self):
+        """
+        Parse the MMseqs2 taxonomy output file.
+
+        :return: Dictionary with contig names as keys and taxonomy lineages as values.
+        :rtype: dict
+        """
         with open(self.mmseqs_tax_out_file, 'r') as f:
             lca_dict = {}
             for line in f:
                 line = line.strip().split('\t')
-
                 contig = line[0]
                 if len(line) < 5:
                     lca_lineage = line[3]
@@ -183,7 +298,12 @@ class mmseqs_parser:
         return lca_dict
 
     def parse_mmseqs_e_search_tophit(self):
+        """
+        Parse the MMseqs2 easy-search output file.
 
+        :return: Dictionary with contig names as keys and lists of hit information as values.
+        :rtype: dict
+        """
         with open(self.mmseqs_s_out_file, 'r') as f:
             tophit_dict = {}
             for line in f:
@@ -198,77 +318,45 @@ class mmseqs_parser:
                     bits = line[11]
                     qcov = line[12]
                     lineage = line[14]
-                    tophit_dict[contig] = [target,fident, alnlen, eval, bits, qcov, lineage]
+                    tophit_dict[contig] = [target, fident, alnlen, eval, bits, qcov, lineage]
                 else:
                     continue
 
         return tophit_dict
 
     def tax_to_rdrpcatch(self, rdrpcatch_out, extended_rdrpcatch_out, seq_type):
+        """
+        Add taxonomy information to the RdRpCATCH output file.
 
+        :param rdrpcatch_out: Path to the RdRpCATCH output file.
+        :type rdrpcatch_out: str
+        :param extended_rdrpcatch_out: Path to the extended RdRpCATCH output file.
+        :type extended_rdrpcatch_out: str
+        :param seq_type: Type of sequence (prot or nuc).
+        :type seq_type: str
+        :return: None
+        """
         lca_dict = self.parse_mmseqs_tax_lca()
         tophit_dict = self.parse_mmseqs_e_search_tophit()
 
-        with open(rdrpcatch_out, "r") as f_handle, open(extended_rdrpcatch_out, 'w') as out_handle:
+        df = pl.read_csv(rdrpcatch_out, separator='\t')
+        
+        # Create new columns for taxonomy information
+        # For translated sequences, use the frame-specific name
+        lookup_col = 'Translated_contig_name (frame)' if seq_type == 'nuc' else 'Contig_name'
+        
+        df = df.with_columns([
+            pl.Series(name='MMseqs_Taxonomy_2bLCA', values=[lca_dict.get(row[lookup_col], '') for row in df.iter_rows(named=True)]),
+            pl.Series(name='MMseqs_TopHit_accession', values=[tophit_dict.get(row[lookup_col], ['', '', '', '', '', '', ''])[0] for row in df.iter_rows(named=True)]),
+            pl.Series(name='MMseqs_TopHit_fident', values=[tophit_dict.get(row[lookup_col], ['', '', '', '', '', '', ''])[1] for row in df.iter_rows(named=True)]),
+            pl.Series(name='MMseqs_TopHit_alnlen', values=[tophit_dict.get(row[lookup_col], ['', '', '', '', '', '', ''])[2] for row in df.iter_rows(named=True)]),
+            pl.Series(name='MMseqs_TopHit_eval', values=[tophit_dict.get(row[lookup_col], ['', '', '', '', '', '', ''])[3] for row in df.iter_rows(named=True)]),
+            pl.Series(name='MMseqs_TopHit_bitscore', values=[tophit_dict.get(row[lookup_col], ['', '', '', '', '', '', ''])[4] for row in df.iter_rows(named=True)]),
+            pl.Series(name='MMseqs_TopHit_qcov', values=[tophit_dict.get(row[lookup_col], ['', '', '', '', '', '', ''])[5] for row in df.iter_rows(named=True)]),
+            pl.Series(name='MMseqs_TopHit_lineage', values=[tophit_dict.get(row[lookup_col], ['', '', '', '', '', '', ''])[6] for row in df.iter_rows(named=True)])
+        ])
 
-            for line in f_handle:
-                line = line.strip().split("\t")
-                if line[0].startswith("#Contig_name"):
-                    title_line = line + ["MMseqs_Taxonomy_2bLCA", "MMseqs_TopHit_accession", "MMseqs_TopHit_fident",
-                                       "MMseqs_TopHit_alnlen", "MMseqs_TopHit_eval", "MMseqs_TopHit_bitscore",
-                                       "MMseqs_TopHit_qcov", "MMseqs_TopHit_lineage"]
-                    out_handle.write("\t".join(title_line) + "\n")
-                else:
-
-                    if seq_type == 'nuc':
-                        c_name  = line[1]
-                    else:
-                        c_name = line[0]
-
-                    full_c_name = f"{c_name}_RdRp_start:{line[9]}_end:{line[10]}"
-
-                    if full_c_name in lca_dict:
-                        lca = lca_dict[full_c_name]
-                    else:
-                        lca = 'NA'
-
-                    if full_c_name in tophit_dict:
-                        tophit = tophit_dict[full_c_name]
-                        tophit_accession = tophit[0]
-                        tophit_fident = tophit[1]
-                        tophit_alnlen = tophit[2]
-                        tophit_eval = tophit[3]
-                        tophit_bitscore = tophit[4]
-                        tophit_qcov = tophit[5]
-                        tophit_lineage = tophit[6]
-                    else:
-                        tophit_accession = 'NA'
-                        tophit_fident = 'NA'
-                        tophit_alnlen = 'NA'
-                        tophit_eval = 'NA'
-                        tophit_bitscore = 'NA'
-                        tophit_qcov = 'NA'
-                        tophit_lineage = 'NA'
-
-                    line.extend([lca, tophit_accession, tophit_fident, tophit_alnlen, tophit_eval, tophit_bitscore,
-                                    tophit_qcov, tophit_lineage])
-
-                    out_handle.write("\t".join(line) + "\n")
-
-        df = pd.read_csv(extended_rdrpcatch_out, sep="\t")
-        df = df.drop(["Best_hit_norm_bitscore_profile", "Best_hit_norm_bitscore_contig","Best_hit_ID_score", "Best_hit_aln_length"], axis=1)
-        column_order = ["#Contig_name","Translated_contig_name (frame)",
-                        "Sequence_length(AA)","Total_databases_that_the_contig_was_detected(No_of_Profiles)",
-                        "Best_hit_Database","Best_hit_profile_name", "Best_hit_profile_length", "Best_hit_e-value",
-                        "Best_hit_bitscore","RdRp_from(AA)", "RdRp_to(AA)","Best_hit_profile_coverage",
-                        "Best_hit_contig_coverage", "MMseqs_Taxonomy_2bLCA", "MMseqs_TopHit_accession",
-                        "MMseqs_TopHit_fident", "MMseqs_TopHit_alnlen", "MMseqs_TopHit_eval",
-                        "MMseqs_TopHit_bitscore", "MMseqs_TopHit_qcov", "MMseqs_TopHit_lineage"]
-        df = df[column_order]
-        df.to_csv(extended_rdrpcatch_out, sep="\t", index=False)
-
-
-
+        df.write_csv(extended_rdrpcatch_out, separator='\t')
 
 
 class file_handler:

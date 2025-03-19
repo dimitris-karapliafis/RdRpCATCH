@@ -1,3 +1,9 @@
+import warnings
+# Filter numpy warnings before any imports that might trigger them
+warnings.filterwarnings("ignore", category=UserWarning, module="numpy")
+warnings.filterwarnings("ignore", category=RuntimeWarning, module="numpy")
+warnings.filterwarnings("ignore", message=".*subnormal.*")
+
 import rich_click as click
 from rich.console import Console
 from rich.table import Table
@@ -5,8 +11,11 @@ from rich.panel import Panel
 from rich.syntax import Syntax
 from pathlib import Path
 from ..rdrpcatch_wrapper import run_scan, run_download
+from ..rdrpcatch_scripts.fetch_dbs import db_fetcher
+import os
 
 console = Console()
+
 def parse_comma_separated_options(ctx, param, value):
     if not value:
         return ['all']
@@ -23,12 +32,10 @@ def parse_comma_separated_options(ctx, param, value):
 
     return lower_options
 
-
 @click.group()
 def cli():
-    """RdRpCATCH: A package for scanning sequences for RNA virus RNA dependent RNA Polymerases."""
+    """RdRpCATCH - RNA-dependent RNA polymerase Collaborative Analysis Tool with Collections of pHMMs"""
     pass
-
 
 @cli.command("scan", help="Scan sequences for RdRps.")
 @click.option("-i", "--input",
@@ -45,6 +52,9 @@ def cli():
               default="all",
               help="Comma-separated list of databases to search against. Valid options: RVMT, NeoRdRp, NeoRdRp.2.1,"
                    " TSA_Olendraite_fam, TSA_Olendraite_gen, RDRP-scan,Lucaprot, all")
+@click.option("--custom-dbs",
+              help="Path to directory containing custom MSAs/pHMM files to use as additional databases",
+              type=click.Path(exists=True, path_type=Path))
 @click.option("-seq_type", "--seq_type",
               type=click.STRING,
               default=None,
@@ -85,10 +95,9 @@ def cli():
               default=1,
               help="Genetic code to use for translation. (default: 1)")
 @click.pass_context
-def scan(ctx, input, output, db_options, db_dir, seq_type, verbose, evalue,
+def scan(ctx, input, output, db_options, db_dir, custom_dbs, seq_type, verbose, evalue,
          incevalue, domevalue, incdomevalue, zvalue, cpus, length_thr, gen_code):
     """Scan sequences for RdRps."""
-
 
     # Create a rich table for displaying parameters
     table = Table(title="Scan Parameters")
@@ -99,6 +108,8 @@ def scan(ctx, input, output, db_options, db_dir, seq_type, verbose, evalue,
     table.add_row("Output Directory", str(output))
     table.add_row("Databases", ", ".join(db_options))
     table.add_row("Database Directory", str(db_dir))
+    if custom_dbs:
+        table.add_row("Custom Databases", str(custom_dbs))
     table.add_row("Sequence Type", seq_type or "unknown")
     table.add_row("Verbose Mode", "ON" if verbose else "OFF")
     table.add_row("E-value", str(evalue))
@@ -107,11 +118,23 @@ def scan(ctx, input, output, db_options, db_dir, seq_type, verbose, evalue,
     table.add_row("Inclusion Domain E-value", str(incdomevalue))
     table.add_row("Z-value", str(zvalue))
     table.add_row("CPUs", str(cpus))
-    table.add_row("Length Threshold (if nucleotide input, < contigs are filtered out", str(length_thr))
+    table.add_row("Length Threshold", str(length_thr))
     table.add_row("Genetic Code", str(gen_code))
 
-
     console.print(Panel(table, title="Scan Configuration"))
+
+    # Add custom databases if provided
+    if custom_dbs:
+        db = db_fetcher(db_dir)
+        if os.path.isfile(custom_dbs):
+            db.add_custom_db(custom_dbs)
+        else:
+            for item in os.listdir(custom_dbs):
+                item_path = os.path.join(custom_dbs, item)
+                if os.path.isfile(item_path) and item_path.endswith(('.hmm', '.h3m', '.msa', '.sto', '.fasta', '.fa')):
+                    db.add_custom_db(item_path)
+                elif os.path.isdir(item_path):
+                    db.add_custom_db(item_path, item)
 
     run_scan(
         input_file=input,
@@ -130,19 +153,29 @@ def scan(ctx, input, output, db_options, db_dir, seq_type, verbose, evalue,
         gen_code=gen_code
     )
 
-
 @cli.command("download", help="Download RdRpCATCH databases.")
-@click.option('-dest', '--destination_dir',
+@click.option("--destination_dir", "-dest",
               help="Path to the directory to download HMM databases.",
-              default=None,
-              type=click.Path(exists=False, dir_okay=True, writable=True, path_type=Path), required=True)
+              type=click.Path(exists=False, file_okay=False, writable=True, path_type=Path), required=True)
+@click.option("--check-updates", "-u",
+              is_flag=True,
+              help="Check for database updates")
 @click.pass_context
-def download(ctx, destination_dir):
-    """Download RdRpCATCH databases"""
+def download(ctx, destination_dir, check_updates):
+    """Download RdRpCATCH databases."""
+    
+    if check_updates:
+        db = db_fetcher(destination_dir)
+        version_info = db.check_db_updates()
+        if version_info:
+            console.print("Current database versions:")
+            for db_name, info in version_info.items():
+                console.print(f"- {db_name}: {info}")
+        else:
+            console.print("No version information available")
+        return
 
-    console.print(Panel(f"Downloading databases to: {destination_dir}", title="Download Status"))
-    run_download(destination_dir=destination_dir)
-
+    run_download(destination_dir)
 
 # @cli.command("gui", help="Launch the GUI.")
 # @click.pass_context
@@ -151,7 +184,6 @@ def download(ctx, destination_dir):
 #
 #     console.print(Panel("Starting ColabScan GUI...", title="GUI Launch"))
 #     run_gui()
-
 
 if __name__ == '__main__':
     cli(obj={})
