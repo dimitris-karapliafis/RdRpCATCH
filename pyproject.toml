@@ -1,31 +1,36 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "rdrpcatch"
-version = "1.0.0"
-description = "RNA virus RdRp sequence scanner"
-readme = "README.md"
+version = "0.0.1"
 authors = [
-    {name = "Dimitris Karapliafis", email = "dimitris.karapliafis@wur.nl"}
+    {name = "Dimitris Karapliafis", email = "dimitris.karapliafis@wur.nl"},
+    {name = "Uri Neri", email = "uneri@lbl.gov"},
+    {name = "RdRpCATCH contributors", email = "dimitris.karapliafis@wur.nl"}
 ]
-license = {text = "Not yet decided"}
+readme = "README.md"
+license = {text = "MIT"}
 requires-python = ">=3.12"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "Operating System :: OS Independent",
-    "Topic :: Scientific/Engineering :: Bio-Informatics",
+dependencies = [
+    "pyhmmer",
+    "polars",
+    "rich",
+    "rich-click",
+    "upsetplot",
+    "matplotlib",
+    "altair",
+    "pandas==2.2.3"
 ]
+dynamic = ["description"]
 
 [project.urls]
-Homepage = "https://github.com/dimitris-karapliafis/RdRpCATCH"
-Repository = "https://github.com/dimitris-karapliafis/RdRpCATCH"
+Home = "https://github.com/dimitris-karapliafis/RdRpCATCH"
+Source = "https://github.com/dimitris-karapliafis/RdRpCATCH"
 
 [project.scripts]
 rdrpcatch = "rdrpcatch.cli.args:cli"
+# [tool.setuptools.package-data] # TODO: add this once integrated with the download command.
+# rdrpcatch_data = ["data/*"] 
 
-[tool.setuptools]
-zip-safe = false
-include-package-data = true
-packages = {find = {}}
