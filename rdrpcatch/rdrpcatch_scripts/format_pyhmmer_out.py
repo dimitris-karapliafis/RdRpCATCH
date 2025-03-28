@@ -2,6 +2,28 @@ import polars as pl
 import re
 from pathlib import Path
 
+
+
+def calculate_true_coverage(starts: list, ends: list) -> int:
+    """Optimized coverage calculation using interval merging"""
+    if not starts:
+        return 0
+
+    intervals = sorted(zip(starts, ends))
+    merged = []
+    current_start, current_end = intervals[0]
+
+    for start, end in intervals[1:]:
+        if start <= current_end + 1:  # Handle adjacent ranges
+            current_end = max(current_end, end)
+        else:
+            merged.append((current_start, current_end))
+            current_start, current_end = start, end
+
+    merged.append((current_start, current_end))
+    return sum(end - start + 1 for start, end in merged)
+
+
 class hmmsearch_formatter:
     """
     Class for parsing hmmsearch output files.
@@ -31,68 +53,49 @@ class hmmsearch_formatter:
         """
         self.hmm_output_file = hmm_raw
         hmm_custom = str(hmm_raw.with_suffix('.custom.tsv'))
-        
+
         # Parse and process the data using Polars DataFrame operations
-        data_df = self.parse_output_custom(hmm_custom)
+        data_df = pl.read_csv(hmm_custom, separator='\t')
+        data_df = self.calculate_norm_bitscore_profile(data_df)
+        data_df = self.calculate_norm_bitscore_contig(data_df)
+        data_df = self.calculate_coverage_stats(data_df)
+
         
         if seq_type == 'prot':
             self.export_processed_file_aa(data_df, hmm_processed)
         elif seq_type == 'nuc':
             self.export_processed_file_dna(data_df, hmm_processed)
 
-    def parse_output_custom(self, hmm_output_file):
-        """
-        Parses the hmmsearch output file using Polars DataFrame.
 
-        :param hmm_output_file: Path to the hmmsearch output file.
-        :type hmm_output_file: str
-        :return: Polars DataFrame containing the parsed data.
-        :rtype: pl.DataFrame
-        """
-        data_df = pl.read_csv(hmm_output_file, separator='\t')
-        
-        # Calculate normalized bitscores and coverage stats
-        data_df = (data_df
-                  .with_columns([
-                    # Normalized bitscores
-                    (pl.col('score') / pl.col('qlen')).alias('norm_bitscore_profile'),
-                    (pl.col('score') / pl.col('tlen')).alias('norm_bitscore_contig'),
-                    # Coverage statistics
-                    ((pl.col('hmm_to') - pl.col('hmm_from') + 1) / pl.col('qlen')).alias('profile_coverage'),
-                    ((pl.col('ali_to') - pl.col('ali_from') + 1) / pl.col('tlen')).alias('contig_coverage'),
-                    pl.col('acc').alias('ID_score')
-                  ]))
-        
-        return data_df
-
-    def calculate_norm_bitscore_profile(self, data):
+    def calculate_norm_bitscore_profile(self, data_df):
         """
         Calculates the normalized bitscore for each profile.
 
-        :param data: Dictionary containing the parsed data.
+        :param data_df: Dictionary containing the parsed data.
         :type data: dict
         :return: Dictionary containing the parsed data with normalized bitscores.
-        :rtype: dict
+        :rtype: dataframe
         """
-        for t_name in data:
-            print(data[t_name])
-            data[t_name]['norm_bitscore_profile'] = data[t_name]['score'] / data[t_name]['qlen']
-        return data
+        data_df = (data_df.with_columns([
+                        # Normalized bitscores
+                        (pl.col('score') / pl.col('qlen')).alias('norm_bitscore_profile')]))
+        return data_df
 
-    def calculate_norm_bitscore_contig(self, data):
+    def calculate_norm_bitscore_contig(self, data_df):
         """
         Calculates the normalized bitscore for each contig.
 
-        :param data: Dictionary containing the parsed data.
+        :param data_df: Dictionary containing the parsed data.
         :type data: dict
         :return: Dictionary containing the parsed data with normalized bitscores.
-        :rtype: dict
+        :rtype: dataframe
         """
-        for t_name in data:
-            data[t_name]['norm_bitscore_contig'] = data[t_name]['score'] / data[t_name]['tlen']
-        return data
+        data_df = (data_df.with_columns([
+                        # Normalized bitscores
+                        (pl.col('score') / pl.col('tlen')).alias('norm_bitscore_contig')]))
+        return data_df
 
-    def calculate_coverage_stats(self, data):
+    def calculate_coverage_stats(self, data_df):
         """
         Calculates the coverage statistics for each profile.
 
@@ -101,13 +104,79 @@ class hmmsearch_formatter:
         :return: Dictionary containing the parsed data with coverage statistics.
         :rtype: dict
         """
-        for t_name in data:
-            data[t_name]['profile_coverage'] = (data[t_name]['hmm_to'] - data[t_name]['hmm_from'] + 1) / data[t_name][
-                'qlen']
-            data[t_name]['contig_coverage'] = (data[t_name]['ali_to'] - data[t_name]['ali_from'] + 1) / data[t_name][
-                'tlen']
-            data[t_name]['ID_score'] = data[t_name]['acc']
-        return data
+
+        df = data_df.with_columns(
+            pl.col("env_from").cast(pl.Int64),
+            pl.col("env_to").cast(pl.Int64),
+            pl.col("hmm_from").cast(pl.Int64),
+            pl.col("hmm_to").cast(pl.Int64),
+            pl.col("ali_from").cast(pl.Int64),
+            pl.col("ali_to").cast(pl.Int64)
+        )
+
+        stats_df = (
+            df
+            .with_row_index("row_id")
+            .join(
+                df.group_by(["t_name", "q_name"])
+                .agg(
+                    pl.col("env_from").alias("starts"),
+                    pl.col("env_to").alias("ends"),
+                    pl.col("hmm_from").alias("hmm_starts"),
+                    pl.col("hmm_to").alias("hmm_ends"),
+                    pl.col("ali_from").alias("ali_starts"),
+                    pl.col("ali_to").alias("ali_ends"),
+                    pl.col("tlen").first().alias("tlen"),
+                    pl.col("qlen").first().alias("qlen"),
+                    pl.col("score").first().alias("score"),
+                    pl.col("env_from").min().alias("RdRp_start"),
+                    pl.col("env_to").max().alias("RdRp_end"),
+                    pl.len().alias("row_count")
+                )
+                .with_columns(
+                    contig_coverage=pl.when(pl.col("row_count") == 1)
+                    .then(pl.col("ends").list.first() - pl.col("starts").list.first() + 1)
+                    .otherwise(
+                        pl.struct(["starts", "ends"])
+                        .map_elements(lambda x: calculate_true_coverage(x["starts"], x["ends"]),return_dtype=pl.Int64)
+                    ),
+                    profile_coverage=pl.when(pl.col("row_count") == 1)
+                    .then(pl.col("hmm_ends").list.first() - pl.col("hmm_starts").list.first() + 1)
+                    .otherwise(
+                        pl.struct(["hmm_starts", "hmm_ends"])
+                        .map_elements(lambda x: calculate_true_coverage(x["hmm_starts"], x["hmm_ends"]),return_dtype=pl.Int64)
+                    ),
+                    aligned_coverage=pl.when(pl.col("row_count") == 1)
+                    .then(pl.col("ali_ends").list.first() - pl.col("ali_starts").list.first() + 1)
+                    .otherwise(
+                        pl.struct(["ali_starts", "ali_ends"])
+                        .map_elements(lambda x: calculate_true_coverage(x["ali_starts"], x["ali_ends"]),return_dtype=pl.Int64)
+                    )
+                )
+                .with_columns(
+                    contig_coverage=(pl.col("contig_coverage") / pl.col("tlen")).alias("contig_coverage"),
+                    profile_coverage=(pl.col("profile_coverage") / pl.col("qlen")).alias("profile_coverage"),
+                    ID_score=(pl.col("score") / pl.col("aligned_coverage")).alias("ID_score")
+                )
+                .select(
+                    ["t_name", "q_name", "contig_coverage", "profile_coverage", "ID_score", "RdRp_start", "RdRp_end"]),
+                on=["t_name", "q_name"]
+            )
+            .sort("row_id")
+            .drop("row_id")
+        )
+        # Group by contig and profile name, keep the first occurrence of all columns
+        stats_df = (
+            stats_df
+            .group_by(["t_name", "q_name"])
+            .agg(
+                pl.col("*").first()  # Keep the first occurrence of all columns
+            )
+            .sort(["t_name", "q_name"])
+        )
+
+        return stats_df
+
 
     def export_processed_file_aa(self, data_df, outfile):
         """
@@ -122,16 +191,18 @@ class hmmsearch_formatter:
         # Select and rename columns for output
         output_df = data_df.select([
             pl.col('t_name').alias('Contig_name'),
+            pl.lit("-").alias('Translated_contig_name (frame)'),
             pl.col('tlen').alias('Sequence_length(AA)'),
             pl.col('q_name').alias('Profile_name'),
             pl.col('qlen').alias('Profile_length'),
             pl.col('E-value'),
             pl.col('score'),
+            # pl.col("acc").alias("hmm_accuracy"),
             pl.col('norm_bitscore_profile'),
             pl.col('norm_bitscore_contig'),
             pl.col('ID_score'),
-            pl.col('ali_from').alias('RdRp_from(AA)'),
-            pl.col('ali_to').alias('RdRp_to(AA)'),
+            pl.col('RdRp_start').alias('RdRp_from(AA)'),
+            pl.col('RdRp_end').alias('RdRp_to(AA)'),
             pl.col('profile_coverage'),
             pl.col('contig_coverage')
         ])
@@ -162,11 +233,12 @@ class hmmsearch_formatter:
                 pl.col('qlen').alias('Profile_length'),
                 pl.col('E-value'),
                 pl.col('score'),
+                # pl.col("acc").alias("hmm_accuracy"),
                 pl.col('norm_bitscore_profile'),
                 pl.col('norm_bitscore_contig'),
                 pl.col('ID_score'),
-                pl.col('ali_from').alias('RdRp_from(AA)'),
-                pl.col('ali_to').alias('RdRp_to(AA)'),
+                pl.col('RdRp_start').alias('RdRp_from(AA)'),
+                pl.col('RdRp_end').alias('RdRp_to(AA)'),
                 pl.col('profile_coverage'),
                 pl.col('contig_coverage')
             ]))

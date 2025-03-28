@@ -30,77 +30,77 @@ class pyhmmsearch:
             with pyhmmer.easel.SequenceFile(self.seq_file, digital=True) as handle:
                 db = list(handle)
 
-            with open(self.hmmsearch_out_path, 'wb') as raw_out:
+            with open(self.hmmsearch_out_path, 'wb') as raw_out, open(self.hmmsearch_out_path_custom, 'wb') as custom_out:
                 title_line = ["t_name", "t_acc", "tlen", "q_name", "q_acc", "qlen", "E-value",
                               "score", "bias", "dom_num", "dom_total", "dom_c_value", "dom_i_value", "dom_score",
                               "dom_bias", "hmm_from", "hmm_to", "ali_from", "ali_to", "env_from", "env_to", "acc",
                               "description of target"]
                 raw_out.write("\t".join(title_line).encode("utf-8") + b"\n")
-                
-                with open(self.hmmsearch_out_path_custom, 'wb') as custom_out:
-                    custom_out.write("\t".join(title_line).encode("utf-8") + b"\n")
-                    for result in pyhmmer.hmmer.hmmsearch(hmms,
-                                                      db,
-                                                      cpus=self.cpus,
-                                                      E=self.e,
-                                                      incdomE=self.incdomE,
-                                                      domE=self.domE,
-                                                      incE=self.incE,
-                                                      Z=self.z):
+                custom_out.write("\t".join(title_line).encode("utf-8") + b"\n")
 
-                        result.write(raw_out, format="domains", header=False)
-                        if len(result) >= 1:
-                            # result.reported.
-                        # print(hits.query_name.decode())
-                            for hit in result:
-                                hit_desc = hit.accession or bytes("", "utf-8")
-                                t_desc = hit.description or bytes("-", "utf-8")
+                for result in pyhmmer.hmmer.hmmsearch(hmms,
+                                                  db,
+                                                  cpus=self.cpus,
+                                                  E=self.e,
+                                                  incdomE=self.incdomE,
+                                                  domE=self.domE,
+                                                  incE=self.incE,
+                                                  Z=self.z):
 
-                                # print(dir(hit.domains.ex))
-                                # hit_name  = hit.name.decode()
-                                # join the prot name and acc into a single string because God knows why there are spaces in fasta headers
-                                # full_prot_name = f"{hit_name} {hit_desc.decode()}"
-                                
-                                total_domains = len(hit.domains.included)
-                                dom_desc = result.query.description or bytes("", "utf-8")
-                                
-                                for i, domain in enumerate(hit.domains.included):
-                                    domain_num = i + 1
-                                    
-                                    # print(dir(domain.alignment))
-                                    # remove the non-numeric characters from the posterior_probabilities string, then convert to int
-                                    import re
-                                    # print(domain.alignment.posterior_probabilities)
-                                    aligned_probs = (re.sub(r'[^0-9]', '', domain.alignment.posterior_probabilities))
-                                    mean_aligned_prob = sum(int(digit) for digit in aligned_probs) / len(domain.alignment.posterior_probabilities)
-                                    MEA = mean_aligned_prob 
-                                    # print(MEA)
-                                    outputline = [
-                                        f"{hit.name.decode()}",  # t_name (protein)
-                                        f"{hit_desc.decode()}",  # t_acc (empty if none)
-                                        f"{hit.length}",  # tlen (protein length)
-                                        f"{result.query.name.decode()}", # q_name (HMM name)
-                                        f"{dom_desc.decode()}",  # q_acc (empty if none)
-                                        f"{domain.alignment.hmm_length}", # qlen (HMM length)
-                                        f"{hit.evalue}", # E-value
-                                        f"{hit.score}", # score
-                                        f"{hit.bias}", # bias
-                                        f"{domain_num}", # dom_num (number of this domain)
-                                        f"{total_domains}", # dom_total (total number of domains)
-                                        f"{domain.c_evalue}", # dom_c_value
-                                        f"{domain.i_evalue}", # dom_i_value
-                                        f"{domain.score}", # dom_score
-                                        f"{domain.bias}", # dom_bias
-                                        f"{domain.alignment.hmm_from}", # hmm_from (query from)
-                                        f"{domain.alignment.hmm_to}", # hmm_to (query to)
-                                        f"{domain.alignment.target_from}", # ali_from (target from)
-                                        f"{domain.alignment.target_to}", # ali_to (target to)
-                                        f"{domain.env_from}", # env_from
-                                        f"{domain.env_to}", # env_to
-                                        f"{MEA}", # acc
-                                        f"{t_desc.decode()}" # description of target
-                                    ]
-                                    custom_out.write(("\t".join(outputline) + "\n").encode())
+                    result.write(raw_out, format="domains", header=False)
+                    if len(result) >= 1:
+                        # result.reported.
+                    # print(hits.query_name.decode())
+                        for hit in result:
+                            hit_desc = hit.accession or bytes("", "utf-8")
+                            t_desc = hit.description or bytes("-", "utf-8")
+
+                            # print(dir(hit.domains.ex))
+                            # hit_name  = hit.name.decode()
+                            # join the prot name and acc into a single string because God knows why there are spaces in fasta headers
+                            # full_prot_name = f"{hit_name} {hit_desc.decode()}"
+
+                            total_domains = len(hit.domains.included)
+                            dom_desc = result.query.description or bytes("", "utf-8")
+
+                            for i, domain in enumerate(hit.domains.included):
+                                domain_num = i + 1
+
+                                # print(dir(domain.alignment))
+                                # remove the non-numeric characters from the posterior_probabilities string, then convert to int
+                                import re
+                                # print(domain.alignment.posterior_probabilities)
+                                aligned_probs = (re.sub(r'[^0-9]', '', domain.alignment.posterior_probabilities))
+                                mean_aligned_prob = sum(int(digit) for digit in aligned_probs) / len(domain.alignment.posterior_probabilities)
+                                MEA = mean_aligned_prob
+                                # print(MEA)
+                                outputline = [
+                                    f"{hit.name.decode()}",  # t_name (protein)
+                                    f"{hit_desc.decode()}",  # t_acc (empty if none)
+                                    f"{hit.length}",  # tlen (protein length)
+                                    f"{result.query.name.decode()}", # q_name (HMM name)
+                                    f"{dom_desc.decode()}",  # q_acc (empty if none)
+                                    f"{domain.alignment.hmm_length}", # qlen (HMM length)
+                                    f"{hit.evalue}", # E-value
+                                    f"{hit.score}", # score
+                                    f"{hit.bias}", # bias
+                                    f"{domain_num}", # dom_num (number of this domain)
+                                    f"{total_domains}", # dom_total (total number of domains)
+                                    f"{domain.c_evalue}", # dom_c_value
+                                    f"{domain.i_evalue}", # dom_i_value
+                                    f"{domain.score}", # dom_score
+                                    f"{domain.bias}", # dom_bias
+                                    f"{domain.alignment.hmm_from}", # hmm_from (query from)
+                                    f"{domain.alignment.hmm_to}", # hmm_to (query to)
+                                    f"{domain.alignment.target_from}", # ali_from (target from)
+                                    f"{domain.alignment.target_to}", # ali_to (target to)
+                                    f"{domain.env_from}", # env_from
+                                    f"{domain.env_to}", # env_to
+                                    f"{MEA}", # acc
+                                    f"{t_desc.decode()}" # description of target
+                                ]
+                                custom_out.write(("\t".join(outputline) + "\n").encode())
+
         return self.hmmsearch_out_path
 
     def run_pyhmmsearch_long_sequences(self):
