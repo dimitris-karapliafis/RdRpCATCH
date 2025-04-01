@@ -6,21 +6,24 @@ import polars as pl
 import needletail
 
 
-def write_combined_results_to_gff(output_file, combined_data):
+def write_combined_results_to_gff(output_file, combined_data,seq_type):
     with open(output_file, 'w') as f:
         f.write("##gff-version 3\n")
         for row in combined_data.iter_rows(named=True):
-            record = convert_record_to_gff3_record(row)
+            record = convert_record_to_gff3_record(row, seq_type)
             f.write(f"{record}\n")
 
-def convert_record_to_gff3_record(row): # for dict objects expected to be coherced into a gff3
+def convert_record_to_gff3_record(row,seq_type): # for dict objects expected to be coherced into a gff3
     # taken from rolypoly https://code.jgi.doe.gov/UNeri/rolypoly/-/blob/main/src/rolypoly/commands/annotation/annotate_RNA.py
     
     # try to identify a sequence_id columns (query, qseqid, contig_id, contig, id, name)
-    sequence_id_columns = ["sequence_id",'query', 'qseqid', 'contig_id', 'contig', 'id', 'name','Contig_name']
-    sequence_id_col = next((col for col in sequence_id_columns if col in row.keys()), None)
-    if sequence_id_col is None:
-        raise ValueError(f"No sequence ID column found in row. Available columns: {list(row.keys())}")
+    if seq_type == 'nuc':
+        sequence_id_col = "Translated_contig_name (frame)"
+    else:
+        sequence_id_columns = ["sequence_id",'query', 'qseqid', 'contig_id', 'contig', 'id', 'name','Contig_name']
+        sequence_id_col = next((col for col in sequence_id_columns if col in row.keys()), None)
+        if sequence_id_col is None:
+            raise ValueError(f"No sequence ID column found in row. Available columns: {list(row.keys())}")
     
     # try to identify a score column (score, Score, bitscore, qscore, bit)
     score_columns = ["score", "Score", "bitscore", "qscore", "bit","bits"]
@@ -50,7 +53,7 @@ def convert_record_to_gff3_record(row): # for dict objects expected to be coherc
     
     # Get values, using defaults for missing columns
     sequence_id = row[sequence_id_col]
-    source = row.get(source_col, "rp")
+    source = row.get(source_col, "rdrpcatch")
     score = row.get(score_col, "0")
     feature_type = row.get(type_col, "feature")
     strand = row.get(strand_col, "+")
@@ -61,8 +64,8 @@ def convert_record_to_gff3_record(row): # for dict objects expected to be coherc
         sequence_id,
         source,
         feature_type,
-        str(row.get("start", "1")),
-        str(row.get("end", "1")),
+        str(row.get("RdRp_from(AA)", "1")),
+        str(row.get("RdRp_to(AA)", "1")),
         str(score),
         strand,
         phase,
@@ -97,15 +100,21 @@ class Logger:
    def start_timer(self):
        self.start_time = time.time()
 
-   def stop_timer(self, verbose=None):
+       return self.start_time
+
+   def stop_timer(self, start_time, verbose=None):
         end_time = time.time()
-        raw_execution_time = end_time - self.start_time
-        if raw_execution_time < 60:
-            execution_time = f"{raw_execution_time :.2f} seconds"
-        elif raw_execution_time < 3600:
-            execution_time = f"{raw_execution_time/60 :.2f} minutes"
-        else:
-            execution_time = f"{raw_execution_time/3600 :.2f} hours"
+
+        raw_execution_time = end_time - start_time
+
+        # Calculate hours, minutes, and seconds
+        hours = int(raw_execution_time // 3600)
+        minutes = int((raw_execution_time % 3600) // 60)
+        seconds = int(raw_execution_time % 60)
+        milliseconds = int((raw_execution_time % 1) * 1000)
+
+        # Format the output
+        execution_time = f"{hours} Hours {minutes} Minutes {seconds} Seconds {milliseconds} ms"
 
         return execution_time
 
@@ -211,7 +220,8 @@ class fasta:
         contig_dict = {}
         reader = needletail.parse_fastx_file(self.fasta_file)
         for record in reader:
-            if record.id in contig_list:
+            # pyhmmer uses the first word of the header as the ID, so split on whitespace
+            if record.id.strip().split(" ")[0] in contig_list:
                 contig_dict[record.id] = record.seq
         return contig_dict
 
@@ -244,12 +254,13 @@ class fasta:
         if self.logger:
             self.logger.silent_log(f"Processing {len(rdrp_coords_list)} coordinates")
             self.logger.silent_log(f"First few coordinates: {rdrp_coords_list[:3]}")
-        
+
         reader = needletail.parse_fastx_file(self.fasta_file)
         matches_found = 0
         with open(outfile, 'w') as out_handle:
             for record in reader:
-                record_id = record.id.strip()
+                # pyhmmer uses the first word of the header as the ID, so split on whitespace
+                record_id = record.id.strip().split(" ")[0]
                 if self.logger:
                     self.logger.silent_log(f"Processing record with ID: '{record_id}'")
                 for contig_name, rdrp_from, rdrp_to in rdrp_coords_list:
@@ -259,7 +270,8 @@ class fasta:
                     if record_id == contig_name:
                         matches_found += 1
                         seq = record.seq[rdrp_from-1:rdrp_to]
-                        out_handle.write(f">{record_id}\n{seq}\n")
+                        fasta_header = f"{record_id}_RdRp_{rdrp_from}-{rdrp_to}"
+                        out_handle.write(f">{fasta_header}\n{seq}\n")
                         if self.logger:
                             self.logger.silent_log(f"Match found! Writing sequence of length {len(seq)}")
                     else:
@@ -340,6 +352,10 @@ class mmseqs_parser:
         tophit_dict = self.parse_mmseqs_e_search_tophit()
 
         df = pl.read_csv(rdrpcatch_out, separator='\t')
+
+        # drop columns that are not needed
+        df = df.drop(["Best_hit_norm_bitscore_profile", "Best_hit_norm_bitscore_contig",
+                        "Best_hit_ID_score"])
         
         # Create new columns for taxonomy information
         # For translated sequences, use the frame-specific name
@@ -356,7 +372,10 @@ class mmseqs_parser:
             pl.Series(name='MMseqs_TopHit_lineage', values=[tophit_dict.get(row[lookup_col], ['', '', '', '', '', '', ''])[6] for row in df.iter_rows(named=True)])
         ])
 
-        df.write_csv(extended_rdrpcatch_out, separator='\t')
+        # Sort by Best_hit_bitscore
+        sorted_df = df.sort("Best_hit_bitscore", descending=True)
+
+        sorted_df.write_csv(extended_rdrpcatch_out, separator='\t')
 
 
 class file_handler:
@@ -384,7 +403,6 @@ class file_handler:
 
     def get_file_dir(self):
         return os.path.dirname(self.file)
-
 
 
 

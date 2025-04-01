@@ -128,10 +128,15 @@ class rdrpcatch_output:
 
     @property
     def fasta_nuc_out_path(self):
-        return self.fasta_output_dir / f"{self.prefix}_contigs.fasta"
+        return self.fasta_output_dir / f"{self.prefix}_full_nucleotide_contigs.fasta"
+
+    @property
+    def fasta_trimmed_out_path(self):
+        return self.fasta_output_dir / f"{self.prefix}_trimmed_aminoacid_contigs.fasta"
+
     @property
     def fasta_prot_out_path(self):
-        return self.fasta_output_dir / f"{self.prefix}_transl_contigs.fasta"
+        return self.fasta_output_dir / f"{self.prefix}_full_aminoacid_contigs.fasta"
 
     @property
     def rdrpcatch_output(self):
@@ -151,7 +156,7 @@ class rdrpcatch_output:
         return self.output_dir / f"{self.prefix}_gff_files"
     @property
     def gff_output_path(self):
-        return self.gff_output_dir / f"{self.prefix}_rdrpcatch.gff"
+        return self.gff_output_dir / f"{self.prefix}_full_aminoacid_rdrpcatch.gff3"
 
 
 

@@ -5,7 +5,16 @@ from pathlib import Path
 
 
 def calculate_true_coverage(starts: list, ends: list) -> int:
-    """Optimized coverage calculation using interval merging"""
+    """Optimized coverage calculation using interval merging
+
+    :param starts: List of start positions
+    :type starts: list
+    :param ends: List of end positions
+    :type ends: list
+    :return: Total coverage
+    :rtype: int
+    """
+
     if not starts:
         return 0
 
@@ -242,7 +251,6 @@ class hmmsearch_formatter:
                 pl.col('profile_coverage'),
                 pl.col('contig_coverage')
             ]))
-        
         output_df.write_csv(outfile, separator="\t")
 
 class hmmsearch_format_helpers:
@@ -260,7 +268,10 @@ class hmmsearch_format_helpers:
         :rtype: set
         """
         df = pl.read_csv(self.hmm_outfn, separator='\t')
-        result = set(df['Contig_name'].unique())
+        if self.seq_type == 'nuc':
+            result = set(df['Contig_name'].unique())
+        elif self.seq_type == 'prot':
+            result = set(df['Translated_contig_name (frame)'].unique())
         if self.logger:
             self.logger.silent_log(f"Found {len(result)} unique contigs")
         return result
@@ -368,14 +379,54 @@ class hmmsearch_output_writter:
         :return: None
         """
         from .utils import write_combined_results_to_gff, convert_record_to_gff3_record
-        
+
         df = pl.read_csv(hmmsearch_out_file, separator='\t')
-        
+
+        grouped = df.group_by("Contig_name").agg(
+            pl.concat_str(
+                [
+                    pl.col("db_name"),
+                    pl.col("Total_positive_profiles").cast(str)
+                ],
+                separator="="
+            ).str.join(";").alias("Total_databases_that_the_contig_was_detected(No_of_Profiles)")
+        )
+        # Group by contig name and get the max score
+        max_scores = df.group_by("Contig_name").agg(pl.max("score"))
+        # Join the max scores and the grouped columns
+        result_df = df.join(max_scores, on=["Contig_name", "score"]).join(grouped, on="Contig_name")
+        # Drop the Total_positive_profiles column
+        result_df = result_df.unique("Contig_name").drop("Total_positive_profiles")
+
+
+        # Rename the columns
+        result_df = result_df.with_columns(pl.col("db_name").alias("Best_hit_Database"))
+        result_df = result_df.with_columns(pl.col("Profile_name").alias("Best_hit_profile_name"))
+        result_df = result_df.with_columns(pl.col("Profile_length").alias("Best_hit_profile_length"))
+        result_df = result_df.with_columns(pl.col("E-value").alias("Best_hit_e-value"))
+        result_df = result_df.with_columns(pl.col("score").map_elements(lambda x: f"{x:.3f}", return_dtype=pl.Utf8).alias("Best_hit_bitscore"))
+        result_df = result_df.with_columns(pl.col("profile_coverage").map_elements(lambda x: f"{x:.3f}", return_dtype=pl.Utf8).alias("Best_hit_profile_coverage"))
+        result_df = result_df.with_columns(pl.col("contig_coverage").map_elements(lambda x: f"{x:.3f}", return_dtype=pl.Utf8).alias("Best_hit_contig_coverage"))
+        result_df = result_df.with_columns(pl.col("norm_bitscore_profile").map_elements(lambda x: f"{x:.3f}", return_dtype=pl.Utf8).alias("Best_hit_norm_bitscore_profile"))
+        result_df = result_df.with_columns(pl.col("norm_bitscore_contig").map_elements(lambda x: f"{x:.3f}", return_dtype=pl.Utf8).alias("Best_hit_norm_bitscore_contig"))
+        result_df = result_df.with_columns(pl.col("ID_score").map_elements(lambda x: f"{x:.3f}", return_dtype=pl.Utf8).alias("Best_hit_ID_score"))
+
+        # Reorder the columns
+        column_order = ["Contig_name", "Translated_contig_name (frame)",
+                        "Sequence_length(AA)", "Total_databases_that_the_contig_was_detected(No_of_Profiles)",
+                        "Best_hit_Database", "Best_hit_profile_name", "Best_hit_profile_length", "Best_hit_e-value",
+                        "Best_hit_bitscore", "RdRp_from(AA)", "RdRp_to(AA)", "Best_hit_profile_coverage",
+                        "Best_hit_contig_coverage", "Best_hit_norm_bitscore_profile", "Best_hit_norm_bitscore_contig",
+                        "Best_hit_ID_score"]
+
+        result_df = result_df.select(column_order)
+
         # Write the RdRpCATCH output file first
-        df.write_csv(rdrpcatch_out, separator='\t')
+        result_df.write_csv(rdrpcatch_out, separator='\t')
+
         
         # Create GFF format with attributes as a struct
-        write_combined_results_to_gff(gff_out, df)
+        write_combined_results_to_gff(gff_out, result_df,seq_type)
         # print(df.columns)
         # gff_df = df.with_columns([
         #     pl.col('Contig_name'),
@@ -421,7 +472,7 @@ class hmmsearch_output_writter:
         #     out_handle.write('##gff-version 3\n')
         #     gff_df.write_csv(out_handle, separator='\t', has_header=False)
 
-    def get_rdrp_coords(self, rdrpcatch_out):
+    def get_rdrp_coords(self, rdrpcatch_out, seq_type):
         """
         Gets the RdRp coordinates from the RdRpCATCH output file.
 
@@ -431,7 +482,7 @@ class hmmsearch_output_writter:
         :rtype: list
         """
         # Convert the path to use combined.tsv instead of rdrpcatch_output.tsv
-        combined_file = str(Path(rdrpcatch_out).parent / Path(rdrpcatch_out).stem.replace('_rdrpcatch_output', '_combined.tsv'))
+        combined_file = str(Path(rdrpcatch_out).parent / Path(rdrpcatch_out))
         if self.logger:
             self.logger.silent_log(f"Reading coordinates from {combined_file}")
         
@@ -439,13 +490,19 @@ class hmmsearch_output_writter:
         if self.logger:
             self.logger.silent_log(f"Found {len(df)} rows in combined file")
             self.logger.silent_log(f"Column names: {df.columns}")
-        
-        coords = df.select([
-            'Translated_contig_name (frame)',
-            'RdRp_from(AA)',
-            'RdRp_to(AA)'
-        ]).rows()
-        
+        if seq_type == 'nuc':
+            coords = df.select([
+                'Translated_contig_name (frame)',
+                'RdRp_from(AA)',
+                'RdRp_to(AA)'
+            ]).rows()
+        elif seq_type == 'prot':
+            coords = df.select([
+                'Contig_name',
+                'RdRp_from(AA)',
+                'RdRp_to(AA)'
+            ]).rows()
+
         if self.logger:
             self.logger.silent_log(f"Extracted {len(coords)} coordinate sets")
             self.logger.silent_log(f"First few coordinates: {coords[:3]}")
