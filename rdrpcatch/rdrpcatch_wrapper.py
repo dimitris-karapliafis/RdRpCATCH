@@ -84,7 +84,7 @@ def bundle_results(output_dir, prefix):
     
     return archive_path
 
-def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,incdomE,domE,incE,z, cpus, length_thr, gen_code):
+def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,incdomE,domE,incE,z, cpus, length_thr, gen_code, bundle, keep_tmp):
     """
     Run RdRpCATCH scan.
 
@@ -141,6 +141,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
     log_file = outputs.log_file
     if not os.path.exists(outputs.output_dir):
         os.makedirs(outputs.output_dir)
+    else:
+        raise Exception(f"Output directory already exists: {outputs.output_dir}, please choose a different directory.")
 
     if not os.path.exists(outputs.log_dir):
         os.makedirs(outputs.log_dir)
@@ -161,6 +163,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
     logger.silent_log(f"CPUs: {cpus}")
     logger.silent_log(f"Length Threshold: {length_thr}")
     logger.silent_log(f"Genetic Code: {gen_code}")
+    logger.silent_log(f"Bundle Results: {'ON' if bundle else 'OFF'}")
+    logger.silent_log(f"Save Temporary Files: {'ON' if keep_tmp else 'OFF'}")
 
     ## Start time
     start_time = logger.start_timer()
@@ -339,7 +343,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             start_hmmsearch_time = logger.start_timer()
             run_pyhmmer.pyhmmsearch(outputs.hmm_output_path(db_name), outputs.seqkit_translate_output_path, db_path, cpus, e, incdomE, domE, incE,
                                               z).run_pyhmmsearch()
-            end_hmmsearch_time = logger.stop_timer(verbose)
+            end_hmmsearch_time = logger.stop_timer(start_hmmsearch_time, verbose)
             if verbose:
                 logger.loud_log(f"{db_name} HMMsearch Runtime: {end_hmmsearch_time}")
             else:
@@ -435,12 +439,16 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             outputs.fasta_output_dir.mkdir(parents=True)
 
         utils.fasta(input_file).write_fasta(utils.fasta(input_file).extract_contigs(combined_set), outputs.fasta_nuc_out_path)
+
+        utils.fasta(outputs.seqkit_translate_output_path).write_fasta(utils.fasta(outputs.seqkit_translate_output_path).extract_contigs(translated_combined_set),
+                                            outputs.fasta_prot_out_path)
+
         if not os.path.exists(outputs.gff_output_dir):
             outputs.gff_output_dir.mkdir(parents=True)
         hmm_writer = format_pyhmmer_out.hmmsearch_output_writter(logger)
         hmm_writer.write_hmmsearch_hits(outputs.combined_tsv_path, seq_type, outputs.rdrpcatch_output, outputs.gff_output_path)
-        rdrp_coords_list = hmm_writer.get_rdrp_coords(outputs.rdrpcatch_output)
-        utils.fasta(outputs.seqkit_translate_output_path, logger).write_fasta_coords(rdrp_coords_list,outputs.fasta_prot_out_path, seq_type)
+        rdrp_coords_list = hmm_writer.get_rdrp_coords(outputs.rdrpcatch_output,seq_type)
+        utils.fasta(outputs.seqkit_translate_output_path, logger).write_fasta_coords(rdrp_coords_list,outputs.fasta_trimmed_out_path, seq_type)
 
         if verbose:
             logger.loud_log(f"Contigs written to: {outputs.fasta_nuc_out_path}")
@@ -494,7 +502,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
                 logger.silent_log(f"HMM output path: {outputs.hmm_output_path(db_name)}")
             start_hmmsearch_time = logger.start_timer()
             hmm_out = run_pyhmmer.pyhmmsearch(outputs.hmm_output_path(db_name), input_file, db_path, cpus, e, incdomE, domE, incE, z).run_pyhmmsearch()
-            end_hmmsearch_time = logger.stop_timer(verbose)
+            end_hmmsearch_time = logger.stop_timer(start_hmmsearch_time,verbose)
             if verbose:
                 logger.loud_log(f"{db_name} HMMsearch Runtime: {end_hmmsearch_time}")
             else:
@@ -524,8 +532,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
                 logger.loud_log(f"Highest Bitscore hits written to: {outputs.best_hit_path(db_name)}")
             else:
                 logger.silent_log(f"Highest Bitscore hits written to: {outputs.best_hit_path(db_name)}")
-
-            set_dict[db_name] = format_pyhmmer_out.hmmsearch_format_helpers(outputs.formatted_hmm_output_path(db_name),seq_type, logger).hmm_to_contig_set()
+            # Here I overwrite prot to nuc, because I need the contig name to extract the contigs
+            set_dict[db_name] = format_pyhmmer_out.hmmsearch_format_helpers(outputs.formatted_hmm_output_path(db_name),"nuc", logger).hmm_to_contig_set()
 
             # Convert to  dataframe, add db_name column and append to df_list
             df = pl.read_csv(outputs.best_hit_path(db_name), separator='\t')
@@ -597,8 +605,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
 
         hmm_writer = format_pyhmmer_out.hmmsearch_output_writter(logger)
         hmm_writer.write_hmmsearch_hits(outputs.combined_tsv_path, seq_type, outputs.rdrpcatch_output, outputs.gff_output_path)
-        rdrp_coords_list = hmm_writer.get_rdrp_coords(outputs.rdrpcatch_output)
-        utils.fasta(outputs.seqkit_translate_output_path, logger).write_fasta_coords(rdrp_coords_list,outputs.fasta_prot_out_path, seq_type)
+        rdrp_coords_list = hmm_writer.get_rdrp_coords(outputs.rdrpcatch_output,seq_type)
+        utils.fasta(input_file, logger).write_fasta_coords(rdrp_coords_list,outputs.fasta_trimmed_out_path, seq_type)
 
         if verbose:
             logger.loud_log(f"RdRpCATCH output file written to: {outputs.fasta_prot_out_path}")
@@ -632,18 +640,40 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             outputs.rdrpcatch_output, outputs.extended_rdrpcatch_output, seq_type)
 
 
-    end_time = logger.stop_timer(verbose)
+    end_time = logger.stop_timer(start_time, verbose)
     if verbose:
         logger.loud_log(f"Total Runtime: {end_time}")
     else:
         logger.silent_log(f"Total Runtime: {end_time}")
 
+
+
+    if not keep_tmp:
+        if verbose:
+            logger.loud_log("Deleting temporary files.")
+        else:
+            logger.silent_log("Deleting temporary files.")
+
+        try:
+            import shutil
+            shutil.rmtree(outputs.tmp_dir)
+            logger.silent_log(f"Temporary files deleted.")
+        except FileNotFoundError:
+            print(f"Directory '{outputs.tmp_dir}' does not exist.")
+        except PermissionError:
+            print(f"Permission denied while trying to delete '{outputs.tmp_dir}'.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
     # Bundle results
-    archive_path = bundle_results(output_dir, prefix)
-    if verbose:
-        logger.loud_log(f"Results bundled into: {archive_path}")
-    else:
-        logger.silent_log(f"Results bundled into: {archive_path}")
+    if bundle:
+        archive_path = bundle_results(output_dir, prefix)
+        if verbose:
+            logger.loud_log(f"Results bundled into: {archive_path}")
+        else:
+            logger.silent_log(f"Results bundled into: {archive_path}")
+
+
 
     return outputs.extended_rdrpcatch_output
 
