@@ -1,17 +1,18 @@
 # RdRpCATCH
 ## RNA-dependent RNA polymerase Collaborative Analysis Tool with Collections of pHMMs
 
-** Forked from https://github.com/dimitris-karapliafis/RdRpCATCH **  
-** Modifying to use [rolypoly](https://code.jgi.doe.gov/UNeri/rolypoly) code/approaches **
+
 
 RdRpCATCH is collaborative effort to combine various publicly available RNA virus RNA-dependent RNA polymerase pHMM databases in one tool
 to facilitate their detection  in (meta-)transcriptomics data.
 
 
 RdRpCATCH  is written in Python and uses the pyHMMER3
-library to perform pHMM searches. The tool scans each sequence in the input file with the selected databases and provides the 
-hit with the highest bitscore across all databases as the best hit. In addition, the tool provides information about the number of profiles
-that were positive for each sequence across all databases, and taxonomic information based on the MMseqs2 easy-taxonomy and search modules against a custom RefSeq Riboviria database.
+library to perform pHMM searches.  In addition, the tool scans each sequence (aa or nt) in the input file with the selected databases and provides the best hit (hit with the highest bitscore across all databases) as output.
+In addition, RdRpCATCH provides information about the number of profiles
+that were positive for each sequence across all pHMM databases, and taxonomic information based on the MMseqs2 easy-taxonomy and search modules against a custom RefSeq Riboviria database.
+
+** The tool has been modified to use [rolypoly](https://code.jgi.doe.gov/UNeri/rolypoly) code/approaches **
 
 ![rdrpcatch_flowchart_v0.png](images%2Frdrpcatch_flowchart_v0.png)
 
@@ -47,15 +48,32 @@ https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html
 Mamba is a faster alternative to conda. If you have it installed, you can use it instead of conda.  
 
 #### Installation steps
-Download the this repo and navigate to it:
 
+The package is available as a bioconda package. You can install it using the following command:
 ```bash
-git clone https://github.com/dimitris-karapliafis/RdRpCATCH.git
-cd RdRpCATCH
+conda install -c bioconda rdrpcatch 
 ```
-Create the conda environment:
+or 
 ```bash
-conda env create -f meta_4test.yaml -n rdrpcatch
+conda env create rdrpcatch -c bioconda rdrpcatch
+```
+
+Alternatively, you can install RdRpCATCH from python package index (PyPI) using pip. This requires the installation of the dependencies
+manually. The dependencies are:
+- mmseqs2
+- seqkit
+
+The dependencies can be installed using conda or mamba. Follow these steps:
+
+Create a new conda environment and install the dependencies:
+```bash
+conda create -n rdrpcatch python=3.12
+conda activate rdrpcatch
+conda install -c bioconda mmseqs2==17.17.b804f seqkit==2.10.0
+```
+Install the tool from pip:
+```bash
+pip install rdrpcatch
 ```
 
 Activate the environment and download the RdRpCATCH databases:
@@ -65,9 +83,8 @@ conda activate rdrpcatch
 rdrpcatch download --destination_dir path/to/store/databases
 ```
 
-* Note 1: The databases are large files and may take some time to download (~ 5.5 GB).
-* Note 2: The databases are stored in the specified directory, and the path is required to run RdRpCATCH. The path that 
-needs to be provided has to be accompanied by the directory DBs, e.g., path/to/store/databases/DBs
+* Note 1: The databases are large files and may take some time to download (~ 3 GB).
+* Note 2: The databases are stored in the specified directory, and the path is required to run RdRpCATCH. 
 
 ## Usage
 RdRpCATCH can be used as a CLI tool as follows:
@@ -90,13 +107,14 @@ The following two commands are available in RdRpCATCH:
 * [`rdrpcatch download`](#rdrpcatch-download)
 
 ### rdrpcatch download:
-A one-time command to download pre-compiled databases from zenodo.
+Command to download pre-compiled databases from Zenodo. If the databases are already downloaded in the specified directory
+, the command will check for updates and download the latest version if available.
 
-| Argument | Short Flag | Type | Description |
-|----------|------------|------|-------------|
+| Argument | Short Flag | Type | Description                                                 |
+|----------|------------|------|-------------------------------------------------------------|
 | `--destination_dir` | `-dest` | PATH | Path to the directory to download HMM databases. [required] |
-| `--check-updates` | `-u` | FLAG | Check for database updates |
-
+| `--concept-doi` | `` | TEXT | Zenodo Concept DOI for database repository                  |
+| `--help` | `` |  | Show help message and exit                                  |
 ### rdrpcatch scan:
 Search a given input using selected RdRp databases.  
 
@@ -117,18 +135,21 @@ Search a given input using selected RdRp databases.
 | `--cpus` | `-cpus` | INTEGER | Number of CPUs to use for HMMsearch. (default: 1) |
 | `--length_thr` | `-length_thr` | INTEGER | Minimum length threshold for seqkit seq. (default: 400) |
 | `--gen_code` | `-gen_code` | INTEGER | Genetic code to use for translation. (default: 1) |
+| `--bundle` | `-bundle` |  |  Bundle the output files into a single archive. (default: False) |
+| `--keep_tmp` | `-keep_tmp` |  | Keep the temporary files generated during the analysis. (default: False) |
+
 
 
 #### Output files  
 rdrpcatch scan will create a folder with the following structure:
 
-| Output | Description |
-|--------|-------------|
-| `{prefix}_rdrpcatch_output_annotated.tsv` | A tab-separated file containing the results of the RdRpCATCH analysis. |
+| Output | Description                                                                  |
+|--------|------------------------------------------------------------------------------|
+| `{prefix}_rdrpcatch_output_annotated.tsv` | A tab-separated file containing the results of the RdRpCATCH analysis.       |
 | `{prefix}_rdrpcatch_fasta` | A directory containing the sequences that were identified as RdRp sequences. |
-| `{prefix}_rdrpcatch_plots` | A directory containing the plots generated during the analysis. |
+| `{prefix}_rdrpcatch_plots` | A directory containing the plots generated during the analysis.              |
 | `{prefix}_gff_files` | A directory containing the GFF files generated during the analysis. (For now only based on protein sequences) |
-| `tmp` | A directory containing temporary files generated during the analysis. |
+| `tmp` | A directory containing temporary files generated during the analysis. (Only available if the -keep_tmp flag is used |
 
 #### Output table fields
 A summary of the results is stored in the `{prefix}_rdrpcatch_output_annotated.tsv` file, which contains the following fields:
@@ -165,13 +186,11 @@ If you use RdRpCATCH, please cite the following third party databases:
 RdRpCATCH is a collaborative effort and we would like to thank all the authors and developers of the underling databases. 
 
 ## Contact
-Dimitris Karapliafis (dimitris.karapliafis), potentially via slack/teams or an issue in the main repo.
+Dimitris Karapliafis (dimitris.karapliafis@wur.nl), potentially via slack/teams or an issue in the main repo.
 
 ##TODO:
 - [ ] loud logging is linking to the utils.py file, not the actual line of code causing the error.
 - [ ] Add `overwrite` flag
-- [ ] verify plots are working
-- [ ] verify gff output is working
 - [ ] drop `db_dir` argument and use global/environment/config variable that is set after running the `download` command
 
 
@@ -179,5 +198,4 @@ Dimitris Karapliafis (dimitris.karapliafis), potentially via slack/teams or an i
 TBD up to Dimitris and Anne
 
 ## Licence
-TBD up to Dimitris and Anne
 [MIT](LICENCE)
