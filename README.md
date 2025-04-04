@@ -36,11 +36,6 @@ Supported databases
 
 ## Installation
 
-### Installation instructions for testing phase
-
-RdRpCATCH will be available as a bioconda package soon. For the testing phase, we provide a tarball and a .yaml file to
-install the tool and its dependencies. The .tar.bz2 is created for Linux systems but should work on MacOS as well.
-(Windows is not supported)
 
 #### Prerequisites
 For the installation process, conda is required. If you don't have conda installed, you can find instructions on how to
@@ -50,10 +45,7 @@ Mamba is a faster alternative to conda. If you have it installed, you can use it
 #### Installation steps
 
 The package is available as a bioconda package. You can install it using the following command:
-```bash
-conda install -c bioconda rdrpcatch 
-```
-or 
+
 ```bash
 conda env create rdrpcatch -c bioconda rdrpcatch
 ```
