@@ -198,4 +198,4 @@ Dimitris Karapliafis (dimitris.karapliafis@wur.nl), potentially via slack/teams 
 TBD up to Dimitris and Anne
 
 ## Licence
-[MIT](LICENCE)
+[MIT](LICENSE)
