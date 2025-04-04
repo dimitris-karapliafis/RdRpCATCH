@@ -8,3 +8,14 @@
 /dataSources.local.xml
 # GitHub Copilot persisted chat sessions
 /copilot/chatSessions
+
+# vscode
+.vscode/
+
+#package stuff
+*/__pycache__/*
+*.pyc
+*build/*
+*.egg-info/
+rdrpcatch.egg-info
+

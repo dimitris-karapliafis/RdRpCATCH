@@ -1,0 +1,32 @@
+11.7647	4	4	no rank	0	unclassified
+88.2353	30	0	no rank	1	root
+88.2353	30	0	superkingdom	10239	  Viruses
+88.2353	30	8	clade	2559587	    Riboviria
+64.7059	22	0	kingdom	2732396	      Orthornavirae
+58.8235	20	2	phylum	2732407	        Lenarviricota
+52.9412	18	0	class	2732499	          Howeltoviricetes
+52.9412	18	0	order	2732503	            Cryppavirales
+52.9412	18	0	family	2732892	              Mitoviridae
+47.0588	16	10	genus	2948686	                Duamitovirus
+5.8824	2	0	species	2955770	                  Duamitovirus boci3
+5.8824	2	2	no rank	1629666	                    Botrytis cinerea mitovirus 3
+5.8824	2	0	species	2955791	                  Duamitovirus nepa1
+5.8824	2	2	no rank	2587538	                    Neofusicoccum parvum mitovirus 1
+2.9412	1	0	species	2955781	                  Duamitovirus fupo3
+2.9412	1	1	no rank	1848152	                    Fusarium poae mitovirus 3
+2.9412	1	0	species	2955802	                  Duamitovirus rhso21
+2.9412	1	1	no rank	2599414	                    Rhizoctonia solani mitovirus 21
+5.8824	2	1	genus	2948940	                Unuamitovirus
+2.9412	1	0	species	2956615	                  Unuamitovirus hyfr1
+2.9412	1	1	no rank	1564031	                    Hymenoscyphus fraxineus mitovirus 1
+5.8824	2	0	phylum	2497569	        Negarnaviricota
+2.9412	1	0	subphylum	2497570	          Haploviricotina
+2.9412	1	0	class	2497574	            Monjiviricetes
+2.9412	1	0	order	11157	              Mononegavirales
+2.9412	1	1	family	11270	                Rhabdoviridae
+2.9412	1	0	subphylum	2497571	          Polyploviricotina
+2.9412	1	0	class	2497576	            Ellioviricetes
+2.9412	1	0	order	1980410	              Bunyavirales
+2.9412	1	0	family	11617	                Arenaviridae
+2.9412	1	0	no rank	208898	                  unclassified Arenaviridae
+2.9412	1	1	species	2824520	                    Inner Mongolia sediment arena-like virus

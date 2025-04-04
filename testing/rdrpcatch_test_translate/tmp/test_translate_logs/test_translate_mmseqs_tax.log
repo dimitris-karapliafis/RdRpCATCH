@@ -1,0 +1,286 @@
+Create directory /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp
+easy-taxonomy /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/test_translate_rdrpcatch_fasta/test_translate_full_aminoacid_contigs.fasta /mnt/c/Users/karso/Downloads/test_db/rdrpcatch_dbs/mmseqs_dbs/mmseqs_refseq_riboviria_20250211/riboviria_proteins_2559587_20250211 /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/test_translate_mmseqs_tax /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp --tax-lineage 1 --alignment-mode 3 -s 7 --threads 4 
+
+MMseqs Version:                        	17.b804f
+ORF filter                             	0
+ORF filter e-value                     	100
+ORF filter sensitivity                 	2
+LCA mode                               	3
+Majority threshold                     	0.5
+Vote mode                              	1
+LCA ranks                              	
+Column with taxonomic lineage          	1
+Compressed                             	0
+Threads                                	4
+Verbosity                              	3
+Taxon blacklist                        	12908:unclassified sequences,28384:other sequences
+Substitution matrix                    	aa:blosum62.out,nucl:nucleotide.out
+Add backtrace                          	false
+Alignment mode                         	3
+Alignment mode                         	0
+Allow wrapped scoring                  	false
+E-value threshold                      	0.001
+Seq. id. threshold                     	0
+Min alignment length                   	0
+Seq. id. mode                          	0
+Alternative alignments                 	0
+Coverage threshold                     	0
+Coverage mode                          	0
+Max sequence length                    	65535
+Compositional bias                     	1
+Compositional bias                     	1
+Max reject                             	2147483647
+Max accept                             	2147483647
+Include identical seq. id.             	false
+Preload mode                           	0
+Pseudo count a                         	substitution:1.100,context:1.400
+Pseudo count b                         	substitution:4.100,context:5.800
+Score bias                             	0
+Realign hits                           	false
+Realign score bias                     	-0.2
+Realign max seqs                       	2147483647
+Correlation score weight               	0
+Gap open cost                          	aa:11,nucl:5
+Gap extension cost                     	aa:1,nucl:2
+Zdrop                                  	40
+Seed substitution matrix               	aa:VTML80.out,nucl:nucleotide.out
+Sensitivity                            	7
+k-mer length                           	0
+Target search mode                     	0
+k-score                                	seq:2147483647,prof:2147483647
+Alphabet size                          	aa:21,nucl:5
+Max results per query                  	300
+Split database                         	0
+Split mode                             	2
+Split memory limit                     	0
+Diagonal scoring                       	true
+Exact k-mer matching                   	0
+Mask residues                          	1
+Mask residues probability              	0.9
+Mask lower case residues               	0
+Mask lower letter repeating N times    	0
+Minimum diagonal score                 	15
+Selected taxa                          	
+Spaced k-mers                          	1
+Spaced k-mer pattern                   	
+Local temporary path                   	
+Use GPU                                	0
+Use GPU server                         	0
+Wait for GPU server                    	600
+Prefilter mode                         	0
+Rescore mode                           	0
+Remove hits by seq. id. and coverage   	false
+Sort results                           	0
+Mask profile                           	1
+Profile E-value threshold              	0.001
+Global sequence weighting              	false
+Allow deletions                        	false
+Filter MSA                             	1
+Use filter only at N seqs              	0
+Maximum seq. id. threshold             	0.9
+Minimum seq. id.                       	0.0
+Minimum score per column               	-20
+Minimum coverage                       	0
+Select N most diverse seqs             	1000
+Pseudo count mode                      	0
+Profile output mode                    	0
+Min codons in orf                      	30
+Max codons in length                   	32734
+Max orf gaps                           	2147483647
+Contig start mode                      	2
+Contig end mode                        	2
+Orf start mode                         	1
+Forward frames                         	1,2,3
+Reverse frames                         	1,2,3
+Translation table                      	1
+Translate orf                          	0
+Use all table starts                   	false
+Offset of numeric ids                  	0
+Create lookup                          	0
+Overlap between sequences              	0
+Sequence split mode                    	1
+Header split mode                      	0
+Chain overlapping alignments           	0
+Merge query                            	1
+Search type                            	0
+Exhaustive search mode                 	false
+Filter results during exhaustive search	0
+Strand selection                       	1
+LCA search mode                        	false
+Disk space limit                       	0
+MPI runner                             	
+Force restart with latest tmp          	false
+Remove temporary files                 	true
+Translation mode                       	0
+Report mode                            	0
+Alignment format                       	0
+Format alignment output                	query,target,fident,alnlen,mismatch,gapopen,qstart,qend,tstart,tend,evalue,bits
+Database output                        	false
+First sequence as representative       	false
+Target column                          	1
+Add full header                        	false
+Sequence source                        	0
+Database type                          	0
+Shuffle input database                 	true
+Createdb mode                          	1
+Write lookup file                      	0
+
+createdb /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/test_translate_rdrpcatch_fasta/test_translate_full_aminoacid_contigs.fasta /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/query --dbtype 0 --shuffle 1 --createdb-mode 1 --write-lookup 0 --id-offset 0 --compressed 0 -v 3 
+
+Shuffle database cannot be combined with --createdb-mode 0
+We recompute with --shuffle 0
+Converting sequences
+[
+Time for merging to query_h: 0h 0m 0s 20ms
+Time for merging to query: 0h 0m 0s 18ms
+Database type: Aminoacid
+Time for processing: 0h 0m 0s 108ms
+Create directory /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/taxonomy_tmp
+taxonomy /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/query /mnt/c/Users/karso/Downloads/test_db/rdrpcatch_dbs/mmseqs_dbs/mmseqs_refseq_riboviria_20250211/riboviria_proteins_2559587_20250211 /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/taxonomy_tmp --tax-output-mode 2 --tax-lineage 1 --threads 4 --alignment-mode 3 -s 7 --remove-tmp-files 1 
+
+Create directory /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/taxonomy_tmp/16012559346769756748/tmp_hsp1
+search /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/query /mnt/c/Users/karso/Downloads/test_db/rdrpcatch_dbs/mmseqs_dbs/mmseqs_refseq_riboviria_20250211/riboviria_proteins_2559587_20250211 /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/taxonomy_tmp/16012559346769756748/first /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/taxonomy_tmp/16012559346769756748/tmp_hsp1 --alignment-mode 3 -e 1 --max-rejected 5 --max-accept 30 --threads 4 -s 7 --spaced-kmer-mode 1 --min-length 30 --max-length 32734 --orf-start-mode 1 --lca-search 1 --remove-tmp-files 1 
+
+prefilter /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/query /mnt/c/Users/karso/Downloads/test_db/rdrpcatch_dbs/mmseqs_dbs/mmseqs_refseq_riboviria_20250211/riboviria_proteins_2559587_20250211 /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/taxonomy_tmp/16012559346769756748/tmp_hsp1/6739269235685288739/pref_0 --sub-mat 'aa:blosum62.out,nucl:nucleotide.out' --seed-sub-mat 'aa:VTML80.out,nucl:nucleotide.out' -k 0 --target-search-mode 0 --k-score seq:2147483647,prof:2147483647 --alph-size aa:21,nucl:5 --max-seq-len 65535 --max-seqs 300 --split 0 --split-mode 2 --split-memory-limit 0 -c 0 --cov-mode 0 --comp-bias-corr 1 --comp-bias-corr-scale 1 --diag-score 1 --exact-kmer-matching 0 --mask 1 --mask-prob 0.9 --mask-lower-case 0 --mask-n-repeat 0 --min-ungapped-score 15 --add-self-matches 0 --spaced-kmer-mode 1 --db-load-mode 0 --pca substitution:1.100,context:1.400 --pcb substitution:4.100,context:5.800 --threads 4 --compressed 0 -v 3 -s 7.0 
+
+Query database size: 34 type: Aminoacid
+Estimated memory consumption: 1G
+Target database size: 26021 type: Aminoacid
+Index table k-mer threshold: 100 at k-mer size 6 
+Index table: counting k-mers
+[=================================================================] 26.02K 1s 856ms
+Index table: Masked residues: 61489
+Index table: fill
+[=================================================================] 26.02K 1s 722ms
+Index statistics
+Entries:          18090466
+DB size:          591 MB
+Avg k-mer size:   0.282664
+Top 10 k-mers
+    ATDSSD	502
+    LKEREK	501
+    SGPTDN	379
+    KEEKGR	362
+    NNGPVV	351
+    STVNMV	303
+    NKRFAP	274
+    CVDNFY	273
+    WNSKLR	250
+    PKEEVS	248
+Time for index table init: 0h 0m 4s 415ms
+Process prefiltering step 1 of 1
+
+k-mer similarity threshold: 100
+Starting prefiltering scores calculation (step 1 of 1)
+Query db start 1 to 34
+Target db start 1 to 26021
+[=================================================================] 34 0s 411ms
+
+946.755430 k-mers per position
+290365 DB matches per sequence
+0 overflows
+300 sequences passed prefiltering per query sequence
+300 median result list length
+0 sequences with 0 size result lists
+Time for merging to pref_0: 0h 0m 0s 109ms
+Time for processing: 0h 0m 6s 129ms
+lcaalign /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/query /mnt/c/Users/karso/Downloads/test_db/rdrpcatch_dbs/mmseqs_dbs/mmseqs_refseq_riboviria_20250211/riboviria_proteins_2559587_20250211 /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/taxonomy_tmp/16012559346769756748/tmp_hsp1/6739269235685288739/pref_0 /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/taxonomy_tmp/16012559346769756748/first --sub-mat 'aa:blosum62.out,nucl:nucleotide.out' -a 0 --alignment-mode 3 --alignment-output-mode 0 --wrapped-scoring 0 -e 1 --min-seq-id 0 --min-aln-len 0 --seq-id-mode 0 --alt-ali 0 -c 0 --cov-mode 0 --max-seq-len 65535 --comp-bias-corr 1 --comp-bias-corr-scale 1 --max-rejected 5 --max-accept 30 --add-self-matches 0 --db-load-mode 0 --pca substitution:1.100,context:1.400 --pcb substitution:4.100,context:5.800 --score-bias 0 --realign 0 --realign-score-bias -0.2 --realign-max-seqs 2147483647 --corr-score-weight 0 --gap-open aa:11,nucl:5 --gap-extend aa:1,nucl:2 --zdrop 40 --threads 4 --compressed 0 -v 3 
+
+Compute score and coverage
+Query database size: 34 type: Aminoacid
+Target database size: 26021 type: Aminoacid
+[=================================================================] 34 0s 259ms
+Time for merging to first: 0h 0m 0s 79ms
+1020 alignments calculated
+1020 sequence pairs passed the thresholds (1.000000 of overall calculated)
+30.000000 hits per query sequence
+Time for processing: 0h 0m 1s 795ms
+rmdb /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/taxonomy_tmp/16012559346769756748/tmp_hsp1/6739269235685288739/pref_0 -v 3 
+
+Time for processing: 0h 0m 0s 48ms
+rmdb /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/taxonomy_tmp/16012559346769756748/tmp_hsp1/6739269235685288739/aln_0 -v 3 
+
+Time for processing: 0h 0m 0s 2ms
+rmdb /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/taxonomy_tmp/16012559346769756748/tmp_hsp1/6739269235685288739/input_0 -v 3 
+
+Time for processing: 0h 0m 0s 12ms
+rmdb /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/taxonomy_tmp/16012559346769756748/tmp_hsp1/6739269235685288739/aln_merge -v 3 
+
+Time for processing: 0h 0m 0s 8ms
+lca /mnt/c/Users/karso/Downloads/test_db/rdrpcatch_dbs/mmseqs_dbs/mmseqs_refseq_riboviria_20250211/riboviria_proteins_2559587_20250211 /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/taxonomy_tmp/16012559346769756748/first /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result --blacklist '12908:unclassified sequences,28384:other sequences' --tax-lineage 1 --compressed 0 --threads 4 -v 3 
+
+=====[============================================================] 34 0s 694ms
+Taxonomy for 0 out of 99 entries not found
+Time for merging to result: 0h 0m 0s 61ms
+Time for processing: 0h 0m 1s 663ms
+mvdb /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/taxonomy_tmp/16012559346769756748/first /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result_aln -v 3 
+
+Time for processing: 0h 0m 0s 73ms
+rmdb /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/taxonomy_tmp/16012559346769756748/first -v 3 
+
+Time for processing: 0h 0m 0s 2ms
+createtsv /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/query /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/test_translate_mmseqs_tax_lca.tsv --first-seq-as-repr 0 --target-column 1 --full-header 0 --idx-seq-src 0 --db-output 0 --threads 4 --compressed 0 -v 3 
+
+Time for merging to test_translate_mmseqs_tax_lca.tsv: 0h 0m 0s 65ms
+Time for processing: 0h 0m 0s 162ms
+taxonomyreport /mnt/c/Users/karso/Downloads/test_db/rdrpcatch_dbs/mmseqs_dbs/mmseqs_refseq_riboviria_20250211/riboviria_proteins_2559587_20250211 /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/test_translate_mmseqs_tax_report --report-mode 0 --threads 4 -v 3 
+
+=[================================================================] 34 0s 20ms
+Found 12 different taxa for 34 different reads
+4 reads are unclassified
+Calculating clade counts ...  Done
+Time for processing: 0h 0m 9s 389ms
+swapresults /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/query /mnt/c/Users/karso/Downloads/test_db/rdrpcatch_dbs/mmseqs_dbs/mmseqs_refseq_riboviria_20250211/riboviria_proteins_2559587_20250211 /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result_aln /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result_aln_swapped --sub-mat 'aa:blosum62.out,nucl:nucleotide.out' -e 3.40282e+38 --split-memory-limit 0 --gap-open aa:11,nucl:5 --gap-extend aa:1,nucl:2 --threads 4 --compressed 0 --db-load-mode 0 -v 3 
+
+Computing offsets.
+[=================================================================] 34 0s 21ms
+
+Reading results.
+[=================================================================] 34 0s 19ms
+
+Output database: /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result_aln_swapped
+[=================================================================] 26.02K 0s 51ms
+
+Time for merging to result_aln_swapped: 0h 0m 0s 159ms
+Time for processing: 0h 0m 0s 430ms
+summarizealis /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result_aln_swapped /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result_aln_swapped_sum --threads 4 --compressed 0 -v 3 
+
+[=================================================================] 26.02K 0s 24ms
+Time for merging to result_aln_swapped_sum: 0h 0m 0s 159ms
+Time for processing: 0h 0m 0s 294ms
+addtaxonomy /mnt/c/Users/karso/Downloads/test_db/rdrpcatch_dbs/mmseqs_dbs/mmseqs_refseq_riboviria_20250211/riboviria_proteins_2559587_20250211 /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result_aln_swapped_sum /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result_aln_swapped_sum_tax --tax-lineage 1 --pick-id-from 1 --compressed 0 --threads 4 -v 3 
+
+[=================================================================] 26.02K 0s 740ms
+Taxonomy for 0 entries not found and 0 are deleted
+Time for merging to result_aln_swapped_sum_tax: 0h 0m 0s 57ms
+Time for processing: 0h 0m 0s 994ms
+createtsv /mnt/c/Users/karso/Downloads/test_db/rdrpcatch_dbs/mmseqs_dbs/mmseqs_refseq_riboviria_20250211/riboviria_proteins_2559587_20250211 /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result_aln_swapped_sum_tax /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/test_translate_mmseqs_tax_tophit_report --first-seq-as-repr 0 --target-column 1 --full-header 0 --idx-seq-src 0 --db-output 0 --threads 4 --compressed 0 -v 3 
+
+Time for merging to test_translate_mmseqs_tax_tophit_report: 0h 0m 0s 61ms
+Time for processing: 0h 0m 0s 383ms
+convertalis /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/query /mnt/c/Users/karso/Downloads/test_db/rdrpcatch_dbs/mmseqs_dbs/mmseqs_refseq_riboviria_20250211/riboviria_proteins_2559587_20250211 /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result_aln /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/test_translate_mmseqs_tax_tophit_aln --sub-mat 'aa:blosum62.out,nucl:nucleotide.out' --format-mode 0 --format-output query,target,fident,alnlen,mismatch,gapopen,qstart,qend,tstart,tend,evalue,bits --translation-table 1 --gap-open aa:11,nucl:5 --gap-extend aa:1,nucl:2 --db-output 0 --db-load-mode 0 --search-type 0 --threads 4 --compressed 0 -v 3 
+
+[=================================================================] 34 0s 20ms
+Time for merging to test_translate_mmseqs_tax_tophit_aln: 0h 0m 0s 80ms
+Time for processing: 0h 0m 0s 487ms
+rmdb /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result -v 3 
+
+Time for processing: 0h 0m 0s 17ms
+rmdb /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/query -v 3 
+
+Time for processing: 0h 0m 0s 16ms
+rmdb /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/query_h -v 3 
+
+Time for processing: 0h 0m 0s 13ms
+rmdb /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result_aln -v 3 
+
+Time for processing: 0h 0m 0s 19ms
+rmdb /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result_aln_swapped -v 3 
+
+Time for processing: 0h 0m 0s 17ms
+rmdb /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result_aln_swapped_sum -v 3 
+
+Time for processing: 0h 0m 0s 18ms
+rmdb /mnt/c/Users/karso/Downloads/testing/_rdrpcatch_test_translate/tmp/mmseqs_tax_output/tmp/16608414482057878997/result_aln_swapped_sum_tax -v 3 
+
+Time for processing: 0h 0m 0s 17ms

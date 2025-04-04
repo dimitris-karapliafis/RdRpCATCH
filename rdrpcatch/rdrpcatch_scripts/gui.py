@@ -1,16 +1,16 @@
-
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
 import os
 import subprocess
 from tkinter import messagebox
+import polars as pl
 
 
 class colabscanner_gui:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("ColabScanner GUI")
+        self.root.title("RdRpCATCH")
         self.root.geometry("1000x800")
 
 
@@ -19,74 +19,73 @@ class colabscanner_gui:
         style.theme_use("clam")
 
         # Input file selection
-        self.input_label = ttk.Label(self.root, text="Select input .fasta file:")
-        self.input_label.grid(row=0, column=0, padx=5, pady=5)
-        self.input_entry = ttk.Entry(self.root, width=50)
-        self.input_entry.grid(row=0, column=1, padx=5, pady=5)
-        self.input_browse_button = ttk.Button(self.root, text="Browse", command=self.browse_input_file)
-        self.input_browse_button.grid(row=0, column=2, padx=5, pady=5)
+        self.input_frame = ttk.Frame(self.root)
+        self.input_frame.grid(row=0, column=0, columnspan=3, padx=5, pady=5)
+
+        self.input_label = ttk.Label(self.input_frame, text="Input File:")
+        self.input_label.pack(side=tk.LEFT)
+
+        self.input_entry = ttk.Entry(self.input_frame, width=50)
+        self.input_entry.pack(side=tk.LEFT, padx=5)
+
+        self.input_button = ttk.Button(self.input_frame, text="Browse", command=self.browse_input)
+        self.input_button.pack(side=tk.LEFT)
 
         # Parent directory selection
-        self.parent_dir_label = ttk.Label(self.root, text="Specify the directory to store output files:")
-        self.parent_dir_label.grid(row=1, column=0, padx=5, pady=5)
-        self.parent_dir_entry = ttk.Entry(self.root, width=50)
-        self.parent_dir_entry.grid(row=1, column=1, padx=5, pady=5)
-        self.parent_dir_browse_button = ttk.Button(self.root, text="Browse", command=self.browse_parent_directory)
-        self.parent_dir_browse_button.grid(row=1, column=2, padx=5, pady=5)
+        self.parent_dir_frame = ttk.Frame(self.root)
+        self.parent_dir_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=5)
 
-        # Output directory name
-        self.output_name_label = ttk.Label(self.root, text="Specify output Directory Name:")
-        self.output_name_label.grid(row=2, column=0, padx=5, pady=5)
-        self.output_name_entry = ttk.Entry(self.root, width=30)
-        self.output_name_entry.grid(row=2, column=1, padx=5, pady=5)
+        self.parent_dir_label = ttk.Label(self.parent_dir_frame, text="Parent Directory:")
+        self.parent_dir_label.pack(side=tk.LEFT)
 
-        # Download options label
-        self.download_label = ttk.Label(self.root, text="If databases are not downloaded, specify destination directory \n"
-                                                       "and click 'Download Databases' (This might take a while): ")
-        self.download_label.grid(row=3, column=0, padx=5, pady=5)
+        self.parent_dir_entry = ttk.Entry(self.parent_dir_frame, width=50)
+        self.parent_dir_entry.pack(side=tk.LEFT, padx=5)
 
-        # Download destination directory
-        self.destination_entry = ttk.Entry(self.root, width=50)
-        self.destination_entry.grid(row=3, column=1, padx=5, pady=5)
-        self.destination_browse_button = ttk.Button(self.root, text="Browse", command=self.browse_destination_directory)
-        self.destination_browse_button.grid(row=3, column=2, padx=5, pady=5)
+        self.parent_dir_button = ttk.Button(self.parent_dir_frame, text="Browse", command=self.browse_parent_dir)
+        self.parent_dir_button.pack(side=tk.LEFT)
 
-        # Download button
-        self.download_button = ttk.Button(self.root, text="Download Databases", command=self.download_databases)
-        self.download_button.grid(row=4, column=1, padx=5, pady=5)
+        # Output name entry
+        self.output_name_frame = ttk.Frame(self.root)
+        self.output_name_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=5)
 
+        self.output_name_label = ttk.Label(self.output_name_frame, text="Output Name:")
+        self.output_name_label.pack(side=tk.LEFT)
 
-        # hmm_db directory selection
-        self.hmm_dir_label = ttk.Label(self.root, text="Specify the directory where the HMM databases are stored:")
-        self.hmm_dir_label.grid(row=5, column=0, padx=5, pady=5)
-        self.hmm_dir_entry = ttk.Entry(self.root, width=50)
-        self.hmm_dir_entry.grid(row=5, column=1, padx=5, pady=5)
-        self.hmm_dir_browse_button = ttk.Button(self.root, text="Browse", command=self.browse_hmm_directory)
-        self.hmm_dir_browse_button.grid(row=5, column=2, padx=5, pady=5)
+        self.output_name_entry = ttk.Entry(self.output_name_frame, width=50)
+        self.output_name_entry.pack(side=tk.LEFT, padx=5)
 
+        # HMM directory selection
+        self.hmm_dir_frame = ttk.Frame(self.root)
+        self.hmm_dir_frame.grid(row=3, column=0, columnspan=3, padx=5, pady=5)
 
-        # Database selection frame (left side)
-        self.db_frame = ttk.Frame(self.root)
-        self.db_frame.grid(row=6, column=0, padx=5, pady=10)
+        self.hmm_dir_label = ttk.Label(self.hmm_dir_frame, text="HMM Directory:")
+        self.hmm_dir_label.pack(side=tk.LEFT)
 
-        self.db_label = ttk.Label(self.db_frame, text="Select RdRp HMM databases to search against:")
-        self.db_label.pack(anchor=tk.W)
+        self.hmm_dir_entry = ttk.Entry(self.hmm_dir_frame, width=50)
+        self.hmm_dir_entry.pack(side=tk.LEFT, padx=5)
+
+        self.hmm_dir_button = ttk.Button(self.hmm_dir_frame, text="Browse", command=self.browse_hmm_dir)
+        self.hmm_dir_button.pack(side=tk.LEFT)
+
+        # Database selection
+        self.db_frame = ttk.LabelFrame(self.root, text="Select Databases")
+        self.db_frame.grid(row=4, column=0, columnspan=3, padx=5, pady=10)
 
         self.databases = {
             'RVMT': tk.BooleanVar(),
             'NeoRdRp': tk.BooleanVar(),
             'NeoRdRp.2.1': tk.BooleanVar(),
-            'TSA_Olendraite': tk.BooleanVar(),
+            'TSA_Olendraite_fam': tk.BooleanVar(),
+            'TSA_Olendraite_gen': tk.BooleanVar(),
             'RDRP-scan': tk.BooleanVar(),
             'Lucaprot': tk.BooleanVar()
         }
 
-        for db_name in self.databases:
-            checkbox = ttk.Checkbutton(self.db_frame, text=db_name, variable=self.databases[db_name])
-            checkbox.pack(anchor=tk.W)
+        for i, (db_name, var) in enumerate(self.databases.items()):
+            ttk.Checkbutton(self.db_frame, text=db_name, variable=var).grid(row=i//3, column=i%3, padx=5, pady=2)
 
-        # HMMsearch parameters frame (right side)
-        self.hmmsearch_frame = ttk.Frame(self.root)
+        # HMMsearch parameters
+        self.hmmsearch_frame = ttk.LabelFrame(self.root, text="HMMsearch Parameters")
         self.hmmsearch_frame.grid(row=6, column=1, padx=5, pady=10)
 
         self.hmmsearch_label = ttk.Label(self.hmmsearch_frame, text="HMMsearch Parameters:")
@@ -160,47 +159,20 @@ class colabscanner_gui:
         self.progress_text.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.progress_text.yview)
 
-    def browse_input_file(self):
-        file_path = filedialog.askopenfilename(filetypes=[("All Files", "*.*"), ("Text Files", "*.txt")])
+    def browse_input(self):
+        filename = filedialog.askopenfilename()
         self.input_entry.delete(0, tk.END)
-        self.input_entry.insert(tk.END, file_path)
+        self.input_entry.insert(0, filename)
 
-    def browse_parent_directory(self):
-        directory = filedialog.askdirectory()
+    def browse_parent_dir(self):
+        dirname = filedialog.askdirectory()
         self.parent_dir_entry.delete(0, tk.END)
-        self.parent_dir_entry.insert(tk.END, directory)
+        self.parent_dir_entry.insert(0, dirname)
 
-    def browse_hmm_directory(self):
-        directory = filedialog.askdirectory()
+    def browse_hmm_dir(self):
+        dirname = filedialog.askdirectory()
         self.hmm_dir_entry.delete(0, tk.END)
-        self.hmm_dir_entry.insert(tk.END, directory)
-
-    def browse_destination_directory(self):
-        directory = filedialog.askdirectory()
-        self.destination_entry.delete(0, tk.END)
-        self.destination_entry.insert(tk.END, directory)
-
-    def download_databases(self):
-        destination = self.destination_entry.get()
-        if not destination:
-            self.status_label.config(text="Error: Destination directory must be specified.", fg="red")
-            return
-
-        try:
-            result = subprocess.run(["python3", "colabscanner.py", "-download", "-destination", destination],
-                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=True)
-
-            self.status_label.config(text=f"Database download completed successfully.\nOutput:\n{result.stdout}",
-                                     fg="green")
-        except subprocess.CalledProcessError as e:
-            with open("error_log.txt", "w") as log_file:
-                log_file.write(e.output)
-            self.status_label.config(
-                text="Database download failed. See 'error_log.txt' for details.", fg="red"
-            )
-        except Exception as e:
-            messagebox.showerror("Error", f"An unexpected error occurred during database download:\n{str(e)}")
-            print(f"Unexpected error: {e}")
+        self.hmm_dir_entry.insert(0, dirname)
 
     def run_script(self):
         input_file = self.input_entry.get()
@@ -272,6 +244,7 @@ class colabscanner_gui:
         self.progress_text.yview(tk.END)
         self.progress_text.config(state='disabled')
         self.root.update_idletasks()
+
     def run(self):
         self.root.mainloop()
 

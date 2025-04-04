@@ -2,34 +2,14 @@
 Wrapper for the RdRpCATCH package.
 
 """
-from .rdrpcatch_scripts import utils
-from .rdrpcatch_scripts import paths
-from .rdrpcatch_scripts import run_pyhmmer
-from .rdrpcatch_scripts import fetch_dbs
-from .rdrpcatch_scripts import format_pyhmmer_out
 import os
 from pathlib import Path
-from .rdrpcatch_scripts import run_seqkit
-from .rdrpcatch_scripts import plot
-import pandas as pd
-import warnings
-# from .rdrpcatch_scripts import gui
-from .rdrpcatch_scripts import mmseqs_tax
 from rich.console import Console
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="numpy") # see https://moyix.blogspot.com/2022/09/someones-been-messing-with-my-subnormals.html
 
 def main():
     pass
-
-def run_download(destination_dir):
-
-    console = Console()
-
-    fetch_dbs.db_downloader(Path(destination_dir)).download_db()
-    fetch_dbs.db_downloader(Path(destination_dir)).extract_db()
-    fetch_dbs.db_downloader(Path(destination_dir)).del_tar()
-    console.log(f"RdRpCATCH databases downloaded and extracted successfully. Databases are stored in:\n"
-                f"{os.path.abspath(destination_dir)}/DBs")
-    
 
 
 # def run_gui():
@@ -38,14 +18,89 @@ def run_download(destination_dir):
 #     gui_runner.run()
 
 
-def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,incdomE,domE,incE,z, cpus, length_thr, gen_code):
+def bundle_results(output_dir, prefix):
+    """
+    Bundle the results into a tar.gz file.
 
+    :param output_dir: Path to the output directory.
+    :type output_dir: str
+    :param prefix: Prefix for the output files.
+    :type prefix: str
+    :return: Path to the bundled file
+    :rtype: str
+    """
+    import tarfile
+    import datetime
+    
+    # Create timestamp for the archive name
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    archive_name = f"{prefix}_rdrpcatch_results_{timestamp}.tar.gz"
+    archive_path = os.path.join(output_dir, archive_name)
+    
+    # Create tar.gz archive
+    with tarfile.open(archive_path, "w:gz") as tar:
+        # Add all relevant directories
+        for dir_name in [f"{prefix}_rdrpcatch_fasta", f"{prefix}_rdrpcatch_plots", 
+                        f"{prefix}_gff_files", "tmp"]:
+            dir_path = os.path.join(output_dir, dir_name)
+            if os.path.exists(dir_path):
+                tar.add(dir_path, arcname=dir_name)
+        
+        # Add the main output file
+        output_file = os.path.join(output_dir, f"{prefix}_rdrpcatch_output_annotated.tsv")
+        if os.path.exists(output_file):
+            tar.add(output_file, arcname=os.path.basename(output_file))
+    
+    return archive_path
 
+def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,incdomE,domE,incE,z, cpus, length_thr, gen_code, bundle, keep_tmp):
+    """
+    Run RdRpCATCH scan.
+
+    :param input_file: Path to the input FASTA file.
+    :type input_file: str
+    :param output_dir: Path to the output directory.
+    :type output_dir: str
+    :param db_options: List of databases to search against.
+    :type db_options: list
+    :param db_dir: Path to the directory containing RdRpCATCH databases.
+    :type db_dir: str
+    :param seq_type: Type of sequence (prot or nuc).
+    :type seq_type: str
+    :param verbose: Whether to print verbose output.
+    :type verbose: bool
+    :param e: E-value threshold for HMMsearch.
+    :type e: float
+    :param incdomE: Inclusion domain E-value threshold for HMMsearch.
+    :type incdomE: float
+    :param domE: Domain E-value threshold for HMMsearch.
+    :type domE: float
+    :param incE: Inclusion E-value threshold for HMMsearch.
+    :type incE: float
+    :param z: Number of sequences to search against.
+    :type z: int
+    :param cpus: Number of CPUs to use for HMMsearch.
+    :type cpus: int
+    :param length_thr: Minimum length threshold for seqkit seq.
+    :type length_thr: int
+    :param gen_code: Genetic code to use for translation.
+    :type gen_code: int
+    :return: None
+    """
+    from .rdrpcatch_scripts import utils
+    from .rdrpcatch_scripts import paths
+    from .rdrpcatch_scripts import run_pyhmmer
+    from .rdrpcatch_scripts import fetch_dbs
+    from .rdrpcatch_scripts import format_pyhmmer_out
+    from .rdrpcatch_scripts import run_seqkit
+    from .rdrpcatch_scripts import plot
+    import polars as pl
+    from .rdrpcatch_scripts import mmseqs_tax
+    import datetime
+    
     ## Ignore warnings
     warnings.filterwarnings("ignore", category=FutureWarning)
     warnings.filterwarnings("ignore", category=UserWarning)
-
-
 
     ## Set output directories
     prefix = Path(input_file).stem
@@ -55,7 +110,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
     log_file = outputs.log_file
     if not os.path.exists(outputs.output_dir):
         os.makedirs(outputs.output_dir)
-
+    else:
+        raise FileExistsError(f"Output directory already exists: {outputs.output_dir}, please choose a different directory.")
     if not os.path.exists(outputs.log_dir):
         os.makedirs(outputs.log_dir)
 
@@ -75,13 +131,14 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
     logger.silent_log(f"CPUs: {cpus}")
     logger.silent_log(f"Length Threshold: {length_thr}")
     logger.silent_log(f"Genetic Code: {gen_code}")
-
+    logger.silent_log(f"Bundle Results: {'ON' if bundle else 'OFF'}")
+    logger.silent_log(f"Save Temporary Files: {'ON' if keep_tmp else 'OFF'}")
 
     ## Start time
     start_time = logger.start_timer()
 
     ## Check fasta validity
-    if not utils.fasta_checker(input_file).check_fasta_validity():
+    if not utils.fasta_checker(input_file, logger).check_fasta_validity():
         raise Exception("Invalid fasta file.")
     else:
         if verbose:
@@ -91,7 +148,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
 
     ## Check sequence type
     if not seq_type:
-        seq_type = utils.fasta_checker(input_file).check_seq_type()
+        seq_type = utils.fasta_checker(input_file, logger).check_seq_type()
     if verbose:
         logger.loud_log(f"Sequence type: {seq_type}")
     else:
@@ -99,12 +156,9 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
 
     ## Check sequence length in .fasta files, if >100000, pyHMMER breaks
     if seq_type == 'nuc':
-        utils.fasta_checker(input_file).check_seq_length(300000)
+        utils.fasta_checker(input_file, logger).check_seq_length(300000)
     if seq_type == 'prot':
-        utils.fasta_checker(input_file).check_seq_length(100000)
-
-
-
+        utils.fasta_checker(input_file, logger).check_seq_length(100000)
 
     ## Fetch HMM databases- RVMT, NeoRdRp, NeoRdRp.2.1, TSA_Olendraite, RDRP-scan, Lucaprot
     rvmt_hmm_db = fetch_dbs.db_fetcher(db_dir).fetch_hmm_db_path("RVMT")
@@ -194,6 +248,18 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
     if not os.path.exists(outputs.hmm_output_dir):
         outputs.hmm_output_dir.mkdir(parents=True)
 
+    if not os.path.exists(outputs.formatted_hmm_output_dir):
+        outputs.formatted_hmm_output_dir.mkdir(parents=True)
+
+    if not os.path.exists(outputs.tsv_outdir):
+        outputs.tsv_outdir.mkdir(parents=True)
+
+    if not os.path.exists(outputs.plot_outdir):
+        outputs.plot_outdir.mkdir(parents=True)
+
+    if not os.path.exists(outputs.tmp_dir):
+        outputs.tmp_dir.mkdir(parents=True)
+
     if seq_type == 'nuc':
         if verbose:
             logger.loud_log("Nucleotide sequence detected.")
@@ -204,7 +270,6 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         translated_set_dict = {}
         df_list = []
 
-
         ## Filter out sequences with length less than 400 bp with seqkit
         if verbose:
             logger.loud_log("Filtering out sequences with length less than 400 bp.")
@@ -214,8 +279,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         if not os.path.exists(outputs.seqkit_seq_output_dir):
             outputs.seqkit_seq_output_dir.mkdir(parents=True)
 
-
-        run_seqkit.seqkit(input_file,  outputs.seqkit_seq_output_path, log_file, threads=cpus).run_seqkit_seq(length_thr)
+        run_seqkit.seqkit(input_file, outputs.seqkit_seq_output_path, log_file, threads=cpus, logger=logger).run_seqkit_seq(length_thr)
         if verbose:
             logger.loud_log(f"Filtered sequence written to: { outputs.seqkit_seq_output_path}")
         else:
@@ -230,7 +294,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         if not os.path.exists(outputs.seqkit_translate_output_dir):
             outputs.seqkit_translate_output_dir.mkdir(parents=True)
 
-        run_seqkit.seqkit( outputs.seqkit_seq_output_path, outputs.seqkit_translate_output_path, log_file, threads=cpus).run_seqkit_translate(gen_code, 6)
+        run_seqkit.seqkit(outputs.seqkit_seq_output_path, outputs.seqkit_translate_output_path, log_file, threads=cpus, logger=logger).run_seqkit_translate(gen_code, 6)
 
         if verbose:
             logger.loud_log(f"Translated sequence written to: {outputs.seqkit_translate_output_path}")
@@ -247,7 +311,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             start_hmmsearch_time = logger.start_timer()
             run_pyhmmer.pyhmmsearch(outputs.hmm_output_path(db_name), outputs.seqkit_translate_output_path, db_path, cpus, e, incdomE, domE, incE,
                                               z).run_pyhmmsearch()
-            end_hmmsearch_time = logger.stop_timer(verbose)
+            end_hmmsearch_time = logger.stop_timer(start_hmmsearch_time, verbose)
             if verbose:
                 logger.loud_log(f"{db_name} HMMsearch Runtime: {end_hmmsearch_time}")
             else:
@@ -270,7 +334,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             if not os.path.exists(outputs.best_hit_dir):
                 outputs.best_hit_dir.mkdir(parents=True)
 
-            format_pyhmmer_out.hmmsearch_format_helpers(outputs.formatted_hmm_output_path(db_name), seq_type).highest_bitscore_hits(
+            format_pyhmmer_out.hmmsearch_format_helpers(outputs.formatted_hmm_output_path(db_name), seq_type, logger).highest_bitscore_hits(
                 outputs.best_hit_path(db_name))
             if verbose:
                 logger.loud_log(f"Highest Bitscore hits written to: {outputs.best_hit_path(db_name)}")
@@ -278,14 +342,17 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
                 logger.silent_log(f"Highest Bitscore hits written to: {outputs.best_hit_path(db_name)}")
 
             set_dict[db_name] = format_pyhmmer_out.hmmsearch_format_helpers(outputs.formatted_hmm_output_path(db_name),
-                                                                            seq_type).hmm_to_contig_set()
+                                                                            seq_type, logger).hmm_to_contig_set()
             translated_set_dict[db_name] = format_pyhmmer_out.hmmsearch_format_helpers(outputs.formatted_hmm_output_path(db_name),
-                                                                                       'prot').hmm_to_contig_set()
+                                                                                       'prot', logger).hmm_to_contig_set()
 
-            # Convert to pandas dataframe, add db_name column and append to df_list
-            df = pd.read_csv(outputs.best_hit_path(db_name), sep='\t')
-            df['db_name'] = db_name
+            # Convert to dataframe, add db_name column and append to df_list
+            df = pl.read_csv(outputs.best_hit_path(db_name), separator='\t')
+            df = df.with_columns([
+                pl.lit(db_name).alias('db_name')
+            ])
             df_list.append(df)
+
 
 
         if not os.path.exists(outputs.plot_outdir):
@@ -293,6 +360,25 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
 
         if not os.path.exists(outputs.tsv_outdir):
             outputs.tsv_outdir.mkdir(parents=True)
+
+
+        # Combine all the dataframes in the list
+        combined_df = pl.concat(df_list, how='vertical')
+        # Write the combined dataframe to a tsv file
+        for col in ['E-value', 'score', 'norm_bitscore_profile', 'norm_bitscore_contig',
+                    'ID_score', 'profile_coverage', 'contig_coverage']:
+            combined_df = combined_df.with_columns([
+                pl.col(col).cast(pl.Float64)
+            ])
+
+
+        combined_df.write_csv(outputs.combined_tsv_path, separator="\t")
+
+        # Check if the combined dataframe is empty
+        if combined_df.is_empty():
+            logger.loud_log("No hits found by RdRpCATCH. Exiting.")
+            return None
+
 
         if len(db_name_list) > 1:
             if verbose:
@@ -302,15 +388,6 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
 
             plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).upset_plotter(set_dict)
 
-        # Combine all the dataframes in the list
-        combined_df = pd.concat(df_list, ignore_index=True)
-        # Write the combined dataframe to a tsv file
-        for col in ['E-value', 'score', 'norm_bitscore_profile', 'norm_bitscore_contig',
-                    'ID_score', 'profile_coverage', 'contig_coverage']:
-            combined_df[col] = pd.to_numeric(combined_df[col], errors='coerce')
-
-
-        combined_df.to_csv(outputs.combined_tsv_path, sep="\t", index=False)
 
         if verbose:
             logger.loud_log(f"Combined dataframe written to: {outputs.combined_tsv_path}")
@@ -339,11 +416,16 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             outputs.fasta_output_dir.mkdir(parents=True)
 
         utils.fasta(input_file).write_fasta(utils.fasta(input_file).extract_contigs(combined_set), outputs.fasta_nuc_out_path)
+
+        utils.fasta(outputs.seqkit_translate_output_path).write_fasta(utils.fasta(outputs.seqkit_translate_output_path).extract_contigs(translated_combined_set),
+                                            outputs.fasta_prot_out_path)
+
         if not os.path.exists(outputs.gff_output_dir):
             outputs.gff_output_dir.mkdir(parents=True)
-        format_pyhmmer_out.hmmsearch_output_writter().write_hmmsearch_hits(outputs.combined_tsv_path, seq_type, outputs.rdrpcatch_output, outputs.gff_output_path)
-        rdrp_coords_list = format_pyhmmer_out.hmmsearch_output_writter().get_rdrp_coords(outputs.rdrpcatch_output)
-        utils.fasta(outputs.seqkit_translate_output_path).write_fasta_coords(rdrp_coords_list,outputs.fasta_prot_out_path, seq_type)
+        hmm_writer = format_pyhmmer_out.hmmsearch_output_writter(logger)
+        hmm_writer.write_hmmsearch_hits(outputs.combined_tsv_path, seq_type, outputs.rdrpcatch_output, outputs.gff_output_path)
+        rdrp_coords_list = hmm_writer.get_rdrp_coords(outputs.rdrpcatch_output,seq_type)
+        utils.fasta(outputs.seqkit_translate_output_path, logger).write_fasta_coords(rdrp_coords_list,outputs.fasta_trimmed_out_path, seq_type)
 
         if verbose:
             logger.loud_log(f"Contigs written to: {outputs.fasta_nuc_out_path}")
@@ -397,7 +479,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
                 logger.silent_log(f"HMM output path: {outputs.hmm_output_path(db_name)}")
             start_hmmsearch_time = logger.start_timer()
             hmm_out = run_pyhmmer.pyhmmsearch(outputs.hmm_output_path(db_name), input_file, db_path, cpus, e, incdomE, domE, incE, z).run_pyhmmsearch()
-            end_hmmsearch_time = logger.stop_timer(verbose)
+            end_hmmsearch_time = logger.stop_timer(start_hmmsearch_time,verbose)
             if verbose:
                 logger.loud_log(f"{db_name} HMMsearch Runtime: {end_hmmsearch_time}")
             else:
@@ -421,18 +503,20 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             if not os.path.exists(outputs.best_hit_dir):
                 outputs.best_hit_dir.mkdir(parents=True)
 
-            format_pyhmmer_out.hmmsearch_format_helpers(outputs.formatted_hmm_output_path(db_name),seq_type).highest_bitscore_hits(outputs.best_hit_path(db_name))
+            format_pyhmmer_out.hmmsearch_format_helpers(outputs.formatted_hmm_output_path(db_name),seq_type, logger).highest_bitscore_hits(outputs.best_hit_path(db_name))
 
             if verbose:
                 logger.loud_log(f"Highest Bitscore hits written to: {outputs.best_hit_path(db_name)}")
             else:
                 logger.silent_log(f"Highest Bitscore hits written to: {outputs.best_hit_path(db_name)}")
+            # Here I overwrite prot to nuc, because I need the contig name to extract the contigs
+            set_dict[db_name] = format_pyhmmer_out.hmmsearch_format_helpers(outputs.formatted_hmm_output_path(db_name),"nuc", logger).hmm_to_contig_set()
 
-            set_dict[db_name] = format_pyhmmer_out.hmmsearch_format_helpers(outputs.formatted_hmm_output_path(db_name),seq_type).hmm_to_contig_set()
-
-            # Convert to pandas dataframe, add db_name column and append to df_list
-            df = pd.read_csv(outputs.best_hit_path(db_name), sep='\t')
-            df['db_name'] = db_name
+            # Convert to  dataframe, add db_name column and append to df_list
+            df = pl.read_csv(outputs.best_hit_path(db_name), separator='\t')
+            df = df.with_columns([
+                pl.lit(db_name).alias('db_name')
+            ])
             df_list.append(df)
 
         if not os.path.exists(outputs.plot_outdir):
@@ -440,6 +524,24 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
 
         if not os.path.exists(outputs.tsv_outdir):
             outputs.tsv_outdir.mkdir(parents=True)
+
+
+
+        # Combine all the dataframes in the list
+        combined_df = pl.concat(df_list, how='vertical')
+        # Write the combined dataframe to a tsv file
+        for col in ['E-value', 'score', 'norm_bitscore_profile', 'norm_bitscore_contig',
+                    'ID_score', 'profile_coverage', 'contig_coverage']:
+            combined_df = combined_df.with_columns([
+                pl.col(col).cast(pl.Float64)
+            ])
+
+        combined_df.write_csv(outputs.combined_tsv_path, separator="\t")
+
+        # Check if the combined dataframe is empty
+        if combined_df.is_empty():
+            logger.loud_log("No hits found by RdRpCATCH. Exiting.")
+            return None
 
         if len(db_name_list) > 1:
             if verbose:
@@ -449,14 +551,6 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
 
             plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).upset_plotter(set_dict)
 
-        # Combine all the dataframes in the list
-        combined_df = pd.concat(df_list, ignore_index=True)
-        # Write the combined dataframe to a tsv file
-        for col in ['E-value', 'score', 'norm_bitscore_profile', 'norm_bitscore_contig',
-                    'ID_score', 'profile_coverage', 'contig_coverage']:
-            combined_df[col] = pd.to_numeric(combined_df[col], errors='coerce')
-
-        combined_df.to_csv(outputs.combined_tsv_path, sep="\t", index=False)
 
         if verbose:
             logger.loud_log(f"Combined dataframe written to: {outputs.combined_tsv_path}")
@@ -494,9 +588,10 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         if not os.path.exists(outputs.gff_output_dir):
             outputs.gff_output_dir.mkdir(parents=True)
 
-        format_pyhmmer_out.hmmsearch_output_writter().write_hmmsearch_hits(outputs.combined_tsv_path, seq_type, outputs.rdrpcatch_output,outputs.gff_output_path)
-        rdrp_coords_list = format_pyhmmer_out.hmmsearch_output_writter().get_rdrp_coords(outputs.rdrpcatch_output)
-        utils.fasta(input_file).write_fasta_coords(rdrp_coords_list,outputs.fasta_prot_out_path, seq_type)
+        hmm_writer = format_pyhmmer_out.hmmsearch_output_writter(logger)
+        hmm_writer.write_hmmsearch_hits(outputs.combined_tsv_path, seq_type, outputs.rdrpcatch_output, outputs.gff_output_path)
+        rdrp_coords_list = hmm_writer.get_rdrp_coords(outputs.rdrpcatch_output,seq_type)
+        utils.fasta(input_file, logger).write_fasta_coords(rdrp_coords_list,outputs.fasta_trimmed_out_path, seq_type)
 
         if verbose:
             logger.loud_log(f"RdRpCATCH output file written to: {outputs.fasta_prot_out_path}")
@@ -529,6 +624,43 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         utils.mmseqs_parser(outputs.mmseqs_tax_output_lca_path, outputs.mmseqs_e_search_output_path).tax_to_rdrpcatch(
             outputs.rdrpcatch_output, outputs.extended_rdrpcatch_output, seq_type)
 
+
+    end_time = logger.stop_timer(start_time, verbose)
+    if verbose:
+        logger.loud_log(f"Total Runtime: {end_time}")
+    else:
+        logger.silent_log(f"Total Runtime: {end_time}")
+
+
+
+    if not keep_tmp:
+        if verbose:
+            logger.loud_log("Deleting temporary files.")
+        else:
+            logger.silent_log("Deleting temporary files.")
+
+        try:
+            import shutil
+            shutil.rmtree(outputs.tmp_dir)
+            logger.silent_log(f"Temporary files deleted.")
+        except FileNotFoundError:
+            print(f"Directory '{outputs.tmp_dir}' does not exist.")
+        except PermissionError:
+            print(f"Permission denied while trying to delete '{outputs.tmp_dir}'.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+    # Bundle results
+    if bundle:
+        archive_path = bundle_results(output_dir, prefix)
+        if verbose:
+            logger.loud_log(f"Results bundled into: {archive_path}")
+        else:
+            logger.silent_log(f"Results bundled into: {archive_path}")
+
+
+
+    return outputs.extended_rdrpcatch_output
 
 if __name__ == "__main__":
     main()

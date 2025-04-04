@@ -1,0 +1,54 @@
+name: rdrpcatch
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - python =3.12
+  - pip
+  - mmseqs2
+  - seqkit
+  - hatchling
+  - pip:
+    - pyhmmer
+    - needletail
+    - polars
+    - rich
+    - rich-click
+    - upsetplot
+    - matplotlib
+    - altair
+    - pandas==2.2.3
+    - -e . # development mode
+    # - git+https://github.com/dimitris-karapliafis/RdRpCATCH.git # TODO: check and add this back in once the package is released. for now, we are using the local version.
+
+#about:
+#  home: https://github.com/dimitris-karapliafis/RdRpCATCH
+#  license: MIT
+#  license_family: MIT
+#  license_file: LICENSE
+#  summary: RNA virus RdRp sequence scanner
+#  description: |
+#    RdRpCATCH (RNA-dependent RNA polymerase Collaborative Analysis Tool with Collections of pHMMs)
+#    is a tool for scanning sequences for RNA-dependent RNA polymerases (RdRps) using profile HMMs.
+#  dev_url: https://github.com/dimitris-karapliafis/RdRpCATCH
+#
+#extra:
+#  recipe-maintainers:
+#    - dimitris-karapliafis
+#    - uneri
+#
+#build:
+#  number: 2
+#  script: pip install -e .
+#  entry_points:
+#    - rdrpcatch = rdrpcatch.cli.args:cli
+#
+#test:
+#  commands:
+#    - rdrpcatch --help
+#    - rdrpcatch scan --help
+#    - rdrpcatch download --help
+#
+#
