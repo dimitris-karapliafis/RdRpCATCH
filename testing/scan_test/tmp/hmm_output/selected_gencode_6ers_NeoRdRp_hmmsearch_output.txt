@@ -1,2 +1,0 @@
-t_name	t_acc	tlen	q_name	q_acc	qlen	E-value	score	bias	dom_num	dom_total	dom_c_value	dom_i_value	dom_score	dom_bias	hmm_from	hmm_to	ali_from	ali_to	env_from	env_to	acc	description of target
-ND_054724_frame=-1   -            716 238.alnta.divvy_RDRP_0.25_1-499.full -            498     1e-08   39.9   0.7   1   1   1.5e-14   1.5e-08   39.4   0.7   169   419   129   380   108   392 0.77 -

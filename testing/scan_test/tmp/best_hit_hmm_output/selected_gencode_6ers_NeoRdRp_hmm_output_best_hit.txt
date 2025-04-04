@@ -1,2 +1,0 @@
-Contig_name	Translated_contig_name (frame)	Sequence_length(AA)	Profile_name	Profile_length	E-value	score	norm_bitscore_profile	norm_bitscore_contig	ID_score	RdRp_from(AA)	RdRp_to(AA)	profile_coverage	contig_coverage	Total_positive_profiles
-ND_054724	ND_054724_frame=-1	716	238.alnta.divvy_RDRP_0.25_1-499.full	498	1.036526735432808e-8	39.91853713989258	0.0801577051001859	0.05575214684342539	0.0001	129	380	0.5040160642570282	0.35195530726256985	1
