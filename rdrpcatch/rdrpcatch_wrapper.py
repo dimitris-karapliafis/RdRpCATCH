@@ -111,8 +111,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
     if not os.path.exists(outputs.output_dir):
         os.makedirs(outputs.output_dir)
     else:
-        raise Exception(f"Output directory already exists: {outputs.output_dir}, please choose a different directory.")
-
+        raise FileExistsError(f"Output directory already exists: {outputs.output_dir}, please choose a different directory.")
     if not os.path.exists(outputs.log_dir):
         os.makedirs(outputs.log_dir)
 
