@@ -65,15 +65,24 @@ class hmmsearch_formatter:
 
         # Parse and process the data using Polars DataFrame operations
         data_df = pl.read_csv(hmm_custom, separator='\t')
-        data_df = self.calculate_norm_bitscore_profile(data_df)
-        data_df = self.calculate_norm_bitscore_contig(data_df)
-        data_df = self.calculate_coverage_stats(data_df)
+        # Check if the dataframe is empty
+        if data_df.is_empty():
+            title_line= ['Contig_name', 'Translated_contig_name (frame)', 'Sequence_length(AA)', 'Profile_name',
+                         'Profile_length', 'E-value', 'score', 'acc', 'norm_bitscore_profile',
+                         'norm_bitscore_contig', 'ID_score', 'RdRp_from(AA)', 'RdRp_to(AA)', 'profile_coverage',
+                         'contig_coverage']
+            data_df = pl.DataFrame({col: [] for col in title_line})
+            data_df.write_csv(hmm_processed, separator="\t")
+        else:
+            data_df = self.calculate_norm_bitscore_profile(data_df)
+            data_df = self.calculate_norm_bitscore_contig(data_df)
+            data_df = self.calculate_coverage_stats(data_df)
 
-        
-        if seq_type == 'prot':
-            self.export_processed_file_aa(data_df, hmm_processed)
-        elif seq_type == 'nuc':
-            self.export_processed_file_dna(data_df, hmm_processed)
+
+            if seq_type == 'prot':
+                self.export_processed_file_aa(data_df, hmm_processed)
+            elif seq_type == 'nuc':
+                self.export_processed_file_dna(data_df, hmm_processed)
 
 
     def calculate_norm_bitscore_profile(self, data_df):

@@ -11,37 +11,6 @@ warnings.filterwarnings("ignore", category=UserWarning, module="numpy") # see ht
 def main():
     pass
 
-def run_download(destination_dir):
-    """
-    Download and extract databases.
-
-    :param destination_dir: Path to the directory to download databases.
-    :type destination_dir: str
-    :return: None
-    """
-    from .rdrpcatch_scripts import fetch_dbs
-    import datetime
-    console = Console()
-    db = fetch_dbs.db_fetcher(destination_dir)
-    db_downloader = fetch_dbs.db_downloader(Path(destination_dir))
-    db_downloader.download_db()
-    db_downloader.extract_db()
-    db_downloader.del_tar()
-
-    version_info = {
-        'core_dbs': {
-            'downloaded': datetime.datetime.now().isoformat(),
-            'version': '0.0.1',  # TODO: Get this from a another file / environment variable
-            'source': 'zenodo',
-            'url': db_downloader.base_url
-        }
-    }
-    db._save_db_version(version_info)
-
-    console.log(f"RdRpCATCH databases downloaded and extracted successfully. Databases are stored in:\n"
-                f"{os.path.abspath(destination_dir)}/DBs")
-    
-
 
 # def run_gui():
 #
@@ -386,19 +355,13 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             df_list.append(df)
 
 
+
         if not os.path.exists(outputs.plot_outdir):
             outputs.plot_outdir.mkdir(parents=True)
 
         if not os.path.exists(outputs.tsv_outdir):
             outputs.tsv_outdir.mkdir(parents=True)
 
-        if len(db_name_list) > 1:
-            if verbose:
-                logger.loud_log("Generating upset plot.")
-            else:
-                logger.silent_log("Generating upset plot.")
-
-            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).upset_plotter(set_dict)
 
         # Combine all the dataframes in the list
         combined_df = pl.concat(df_list, how='vertical')
@@ -411,6 +374,21 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
 
 
         combined_df.write_csv(outputs.combined_tsv_path, separator="\t")
+
+        # Check if the combined dataframe is empty
+        if combined_df.is_empty():
+            logger.loud_log("No hits found by RdRpCATCH. Exiting.")
+            return None
+
+
+        if len(db_name_list) > 1:
+            if verbose:
+                logger.loud_log("Generating upset plot.")
+            else:
+                logger.silent_log("Generating upset plot.")
+
+            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).upset_plotter(set_dict)
+
 
         if verbose:
             logger.loud_log(f"Combined dataframe written to: {outputs.combined_tsv_path}")
@@ -548,13 +526,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         if not os.path.exists(outputs.tsv_outdir):
             outputs.tsv_outdir.mkdir(parents=True)
 
-        if len(db_name_list) > 1:
-            if verbose:
-                logger.loud_log("Generating upset plot.")
-            else:
-                logger.silent_log("Generating upset plot.")
 
-            plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).upset_plotter(set_dict)
 
         # Combine all the dataframes in the list
         combined_df = pl.concat(df_list, how='vertical')
@@ -566,6 +538,20 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             ])
 
         combined_df.write_csv(outputs.combined_tsv_path, separator="\t")
+
+        # Check if the combined dataframe is empty
+        if combined_df.is_empty():
+            logger.loud_log("No hits found by RdRpCATCH. Exiting.")
+            return None
+
+        if len(db_name_list) > 1:
+            if verbose:
+                logger.loud_log("Generating upset plot.")
+            else:
+                logger.silent_log("Generating upset plot.")
+
+            plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).upset_plotter(set_dict)
+
 
         if verbose:
             logger.loud_log(f"Combined dataframe written to: {outputs.combined_tsv_path}")
