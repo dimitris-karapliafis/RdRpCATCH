@@ -77,7 +77,7 @@ rdrpcatch download --destination_dir path/to/store/databases
 
 * Note 1: The databases are large files and may take some time to download (~ 3 GB).
 * Note 2: The databases are stored in the specified directory, and the path is required to run RdRpCATCH.
-* Note 3: If you encounter an SSL error 
+* Note 3: If you encounter an SSL error while downloading, please try again. The error seems to appear sporadically during testing, and a simple re-initiation of the downloading process seems to fix it. 
 
 ## Usage
 RdRpCATCH can be used as a CLI tool as follows:
