@@ -16,7 +16,7 @@ that were positive for each sequence across all pHMM databases, and taxonomic in
 
 ![rdrpcatch_flowchart_v0.png](images%2Frdrpcatch_flowchart_v0.png)
 
-Supported databases
+### Supported databases
 - NeoRdRp <sup>1</sup> : 1182 pHMMs 
 - NeoRdRp2 <sup>2</sup>: 19394 pHMMs  
 - RVMT <sup>3</sup>: 710 pHMMs  
@@ -61,7 +61,7 @@ Create a new conda environment and install the dependencies:
 ```bash
 conda create -n rdrpcatch python=3.12
 conda activate rdrpcatch
-conda install -c bioconda mmseqs2==17.17.b804f seqkit==2.10.0
+conda install -c bioconda mmseqs2==17.b804f seqkit==2.10.0
 ```
 Install the tool from pip:
 ```bash
@@ -76,7 +76,8 @@ rdrpcatch download --destination_dir path/to/store/databases
 ```
 
 * Note 1: The databases are large files and may take some time to download (~ 3 GB).
-* Note 2: The databases are stored in the specified directory, and the path is required to run RdRpCATCH. 
+* Note 2: The databases are stored in the specified directory, and the path is required to run RdRpCATCH.
+* Note 3: If you encounter an SSL error while downloading, please try again. The error seems to appear sporadically during testing, and a simple re-initiation of the downloading process seems to fix it. 
 
 ## Usage
 RdRpCATCH can be used as a CLI tool as follows:
@@ -141,7 +142,7 @@ rdrpcatch scan will create a folder with the following structure:
 | `{prefix}_rdrpcatch_fasta` | A directory containing the sequences that were identified as RdRp sequences. |
 | `{prefix}_rdrpcatch_plots` | A directory containing the plots generated during the analysis.              |
 | `{prefix}_gff_files` | A directory containing the GFF files generated during the analysis. (For now only based on protein sequences) |
-| `tmp` | A directory containing temporary files generated during the analysis. (Only available if the -keep_tmp flag is used |
+| `tmp` | A directory containing temporary files generated during the analysis. (Only available if the -keep_tmp flag is used )|
 
 #### Output table fields
 A summary of the results is stored in the `{prefix}_rdrpcatch_output_annotated.tsv` file, which contains the following fields:
@@ -172,10 +173,10 @@ A summary of the results is stored in the `{prefix}_rdrpcatch_output_annotated.t
 ## Citations
 Manuscript still in preparation. If you use RdRpCATCH, please cite this GitHub repository 
 A precompiled version of the used databases is available at Zenodo DOI: [10.5281/zenodo.14358348](https://doi.org/10.5281/zenodo.14358348).  
-If you use RdRpCATCH, please cite the following third party databases:
+If you use RdRpCATCH, please cite the [underlying third party databases](#supported-databases) :
 
 ## Acknowledgements
-RdRpCATCH is a collaborative effort and we would like to thank all the authors and developers of the underling databases. 
+RdRpCATCH is a collaborative effort and we would like to thank all the authors and developers of the underlying databases. 
 
 ## Contact
 Dimitris Karapliafis (dimitris.karapliafis@wur.nl), potentially via slack/teams or an issue in the main repo.
