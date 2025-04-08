@@ -491,11 +491,10 @@ class hmmsearch_output_writter:
         :rtype: list
         """
         # Convert the path to use combined.tsv instead of rdrpcatch_output.tsv
-        combined_file = str(Path(rdrpcatch_out).parent / Path(rdrpcatch_out))
         if self.logger:
-            self.logger.silent_log(f"Reading coordinates from {combined_file}")
+            self.logger.silent_log(f"Reading coordinates from {rdrpcatch_out}")
         
-        df = pl.read_csv(combined_file, separator='\t')
+        df = pl.read_csv(rdrpcatch_out, separator='\t')
         if self.logger:
             self.logger.silent_log(f"Found {len(df)} rows in combined file")
             self.logger.silent_log(f"Column names: {df.columns}")

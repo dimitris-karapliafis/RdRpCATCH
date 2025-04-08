@@ -139,7 +139,7 @@ class rdrpcatch_output:
         return self.fasta_output_dir / f"{self.prefix}_full_aminoacid_contigs.fasta"
 
     @property
-    def rdrpcatch_output(self):
+    def rdrpcatch_output_tsv(self):
         return self.tsv_outdir / f"{self.prefix}_rdrpcatch_output.tsv"
 
     @property

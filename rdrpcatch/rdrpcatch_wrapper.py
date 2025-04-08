@@ -423,8 +423,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         if not os.path.exists(outputs.gff_output_dir):
             outputs.gff_output_dir.mkdir(parents=True)
         hmm_writer = format_pyhmmer_out.hmmsearch_output_writter(logger)
-        hmm_writer.write_hmmsearch_hits(outputs.combined_tsv_path, seq_type, outputs.rdrpcatch_output, outputs.gff_output_path)
-        rdrp_coords_list = hmm_writer.get_rdrp_coords(outputs.rdrpcatch_output,seq_type)
+        hmm_writer.write_hmmsearch_hits(outputs.combined_tsv_path, seq_type, outputs.rdrpcatch_output_tsv, outputs.gff_output_path)
+        rdrp_coords_list = hmm_writer.get_rdrp_coords(outputs.rdrpcatch_output_tsv,seq_type)
         utils.fasta(outputs.seqkit_translate_output_path, logger).write_fasta_coords(rdrp_coords_list,outputs.fasta_trimmed_out_path, seq_type)
 
         if verbose:
@@ -458,7 +458,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
                           outputs.mmseqs_e_search_output_path, 7, cpus, outputs.mmseqs_e_search_log_path).run_mmseqs_e_search()
 
         utils.mmseqs_parser(outputs.mmseqs_tax_output_lca_path, outputs.mmseqs_e_search_output_path).tax_to_rdrpcatch(
-            outputs.rdrpcatch_output, outputs.extended_rdrpcatch_output, seq_type)
+            outputs.rdrpcatch_output_tsv, outputs.extended_rdrpcatch_output, seq_type)
 
 
     elif seq_type == 'prot':
@@ -589,8 +589,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             outputs.gff_output_dir.mkdir(parents=True)
 
         hmm_writer = format_pyhmmer_out.hmmsearch_output_writter(logger)
-        hmm_writer.write_hmmsearch_hits(outputs.combined_tsv_path, seq_type, outputs.rdrpcatch_output, outputs.gff_output_path)
-        rdrp_coords_list = hmm_writer.get_rdrp_coords(outputs.rdrpcatch_output,seq_type)
+        hmm_writer.write_hmmsearch_hits(outputs.combined_tsv_path, seq_type, outputs.rdrpcatch_output_tsv, outputs.gff_output_path)
+        rdrp_coords_list = hmm_writer.get_rdrp_coords(outputs.rdrpcatch_output_tsv,seq_type)
         utils.fasta(input_file, logger).write_fasta_coords(rdrp_coords_list,outputs.fasta_trimmed_out_path, seq_type)
 
         if verbose:
@@ -622,7 +622,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
                           outputs.mmseqs_e_search_output_path, 7, cpus, outputs.mmseqs_e_search_log_path).run_mmseqs_e_search()
 
         utils.mmseqs_parser(outputs.mmseqs_tax_output_lca_path, outputs.mmseqs_e_search_output_path).tax_to_rdrpcatch(
-            outputs.rdrpcatch_output, outputs.extended_rdrpcatch_output, seq_type)
+            outputs.rdrpcatch_output_tsv, outputs.extended_rdrpcatch_output, seq_type)
 
 
     end_time = logger.stop_timer(start_time, verbose)
