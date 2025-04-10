@@ -255,32 +255,47 @@ class fasta:
             self.logger.silent_log(f"Processing {len(rdrp_coords_list)} coordinates")
             self.logger.silent_log(f"First few coordinates: {rdrp_coords_list[:3]}")
 
+        contig_dict = {}
+        for contig_name, rdrp_from, rdrp_to in rdrp_coords_list:
+            contig_key = str(contig_name).strip()
+            if contig_key not in contig_dict:
+                contig_dict[contig_key] = []
+            contig_dict[contig_key].append((rdrp_from, rdrp_to))
+
         reader = needletail.parse_fastx_file(self.fasta_file)
         matches_found = 0
         with open(outfile, 'w') as out_handle:
             for record in reader:
-                # pyhmmer uses the first word of the header as the ID, so split on whitespace
+                # Get the record ID
                 record_id = record.id.strip().split(" ")[0]
-                if self.logger:
-                    self.logger.silent_log(f"Processing record with ID: '{record_id}'")
-                for contig_name, rdrp_from, rdrp_to in rdrp_coords_list:
-                    contig_name = str(contig_name).strip()
+
+                # Check if this record matches any of our target contigs
+                if record_id in contig_dict:
                     if self.logger:
-                        self.logger.silent_log(f"Comparing record '{record_id}' with contig '{contig_name}'")
-                    if record_id == contig_name:
-                        matches_found += 1
-                        seq = record.seq[rdrp_from-1:rdrp_to]
+                        self.logger.silent_log(f"Match found for record ID: '{record_id}'")
+
+                    # Process all matching coordinates for this contig
+                    for rdrp_from, rdrp_to in contig_dict[record_id]:
+                        seq = record.seq[rdrp_from - 1:rdrp_to]
                         fasta_header = f"{record_id}_RdRp_{rdrp_from}-{rdrp_to}"
                         out_handle.write(f">{fasta_header}\n{seq}\n")
+                        matches_found += 1
+
+                    # Remove the processed contig to avoid future checks
+                    del contig_dict[record_id]
+
+                    # If all contigs have been found, exit early
+                    if not contig_dict:
                         if self.logger:
-                            self.logger.silent_log(f"Match found! Writing sequence of length {len(seq)}")
-                    else:
-                        if self.logger:
-                            self.logger.silent_log(f"No match - lengths: {len(record_id)}|{len(contig_name)}, "
-                                                 f"record_id bytes: {record_id.encode()}, contig bytes: {contig_name.encode()}")
-        
+                            self.logger.silent_log("All contigs processed. Exiting early.")
+                        break
+
         if self.logger:
             self.logger.silent_log(f"Total matches found: {matches_found}")
+
+        return matches_found
+
+
 
 
 class mmseqs_parser:

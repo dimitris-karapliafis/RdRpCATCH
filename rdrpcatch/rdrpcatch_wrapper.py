@@ -581,9 +581,9 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         utils.fasta(input_file).write_fasta(utils.fasta(input_file).extract_contigs(combined_set), outputs.fasta_prot_out_path)
 
         if verbose:
-            logger.loud_log(f"Contigs written to: {outputs.fasta_prot_out_path}")
+            logger.loud_log(f"Full aminoacid contigs written to: {outputs.fasta_prot_out_path}")
         else:
-            logger.silent_log(f"Contigs written to: {outputs.fasta_prot_out_path}")
+            logger.silent_log(f" Full aminoacid contigs written to: {outputs.fasta_prot_out_path}")
 
         if not os.path.exists(outputs.gff_output_dir):
             outputs.gff_output_dir.mkdir(parents=True)
@@ -594,9 +594,9 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         utils.fasta(input_file, logger).write_fasta_coords(rdrp_coords_list,outputs.fasta_trimmed_out_path, seq_type)
 
         if verbose:
-            logger.loud_log(f"RdRpCATCH output file written to: {outputs.fasta_prot_out_path}")
+            logger.loud_log(f"Trimmed contigs written to: {outputs.fasta_trimmed_out_path}")
         else:
-            logger.silent_log(f"RdRpCATCH output file written to: {outputs.fasta_prot_out_path}")
+            logger.silent_log(f"Trimmed contigs written to: {outputs.fasta_trimmed_out_path}")
 
         if not os.path.exists(outputs.mmseqs_tax_output_dir):
             outputs.mmseqs_tax_output_dir.mkdir(parents=True)
