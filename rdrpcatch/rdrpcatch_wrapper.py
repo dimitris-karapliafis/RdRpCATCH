@@ -363,7 +363,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
 
 
         # Combine all the dataframes in the list
-        combined_df = pl.concat(df_list, how='vertical')
+        combined_df = pl.concat(df_list, how='vertical_relaxed')
         # Write the combined dataframe to a tsv file
         for col in ['E-value', 'score', 'norm_bitscore_profile', 'norm_bitscore_contig',
                     'ID_score', 'profile_coverage', 'contig_coverage']:
