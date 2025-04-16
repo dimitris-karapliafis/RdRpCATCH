@@ -68,7 +68,7 @@ class hmmsearch_formatter:
         # Check if the dataframe is empty
         if data_df.is_empty():
             title_line= ['Contig_name', 'Translated_contig_name (frame)', 'Sequence_length(AA)', 'Profile_name',
-                         'Profile_length', 'E-value', 'score', 'acc', 'norm_bitscore_profile',
+                         'Profile_length', 'E-value', 'score','norm_bitscore_profile',
                          'norm_bitscore_contig', 'ID_score', 'RdRp_from(AA)', 'RdRp_to(AA)', 'profile_coverage',
                          'contig_coverage']
             data_df = pl.DataFrame({col: [] for col in title_line})

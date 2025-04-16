@@ -59,7 +59,7 @@ The dependencies can be installed using conda or mamba. Follow these steps:
 
 Create a new conda environment and install the dependencies:
 ```bash
-conda create -n rdrpcatch python=3.12
+conda env create -n rdrpcatch python=3.12
 conda activate rdrpcatch
 conda install -c bioconda mmseqs2==17.b804f seqkit==2.10.0
 ```

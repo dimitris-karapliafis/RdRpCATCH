@@ -111,7 +111,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
     if not os.path.exists(outputs.output_dir):
         os.makedirs(outputs.output_dir)
     else:
-        raise FileExistsError(f"Output directory already exists: {outputs.output_dir}, please choose a different directory.")
+        raise FileExistsError(f"Output directory already exists: {outputs.output_dir}, Please choose a different directory.")
     if not os.path.exists(outputs.log_dir):
         os.makedirs(outputs.log_dir)
 
@@ -526,9 +526,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             outputs.tsv_outdir.mkdir(parents=True)
 
 
-
         # Combine all the dataframes in the list
-        combined_df = pl.concat(df_list, how='vertical')
+        combined_df = pl.concat(df_list, how='vertical_relaxed')
         # Write the combined dataframe to a tsv file
         for col in ['E-value', 'score', 'norm_bitscore_profile', 'norm_bitscore_contig',
                     'ID_score', 'profile_coverage', 'contig_coverage']:
