@@ -183,7 +183,6 @@ Dimitris Karapliafis (dimitris.karapliafis@wur.nl), potentially via slack/teams 
 
 ##TODO:
 - [ ] loud logging is linking to the utils.py file, not the actual line of code causing the error.
-- [ ] Add `overwrite` flag
 - [ ] drop `db_dir` argument and use global/environment/config variable that is set after running the `download` command
 
 
