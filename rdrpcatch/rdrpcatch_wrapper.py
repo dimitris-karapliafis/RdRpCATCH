@@ -53,7 +53,7 @@ def bundle_results(output_dir, prefix):
     
     return archive_path
 
-def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,incdomE,domE,incE,z, cpus, length_thr, gen_code, bundle, keep_tmp):
+def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,incdomE,domE,incE,z, cpus, length_thr, gen_code, bundle, keep_tmp, overwrite):
     """
     Run RdRpCATCH scan.
 
@@ -110,8 +110,16 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
     log_file = outputs.log_file
     if not os.path.exists(outputs.output_dir):
         os.makedirs(outputs.output_dir)
+    elif os.path.exists(outputs.output_dir) and overwrite:
+        # If the output directory already exists and force_overwrite is True, remove the existing directory
+        import shutil
+        shutil.rmtree(outputs.output_dir)
+        os.makedirs(outputs.output_dir)
+        outputs = paths.rdrpcatch_output(prefix, Path(output_dir))
     else:
-        raise FileExistsError(f"Output directory already exists: {outputs.output_dir}, Please choose a different directory.")
+        raise FileExistsError(f"Output directory already exists: {outputs.output_dir}, Please choose a different directory"
+                              f" or activate the -overwrite flag to overwrite the contents of the directory.")
+
     if not os.path.exists(outputs.log_dir):
         os.makedirs(outputs.log_dir)
 
@@ -159,6 +167,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         utils.fasta_checker(input_file, logger).check_seq_length(300000)
     if seq_type == 'prot':
         utils.fasta_checker(input_file, logger).check_seq_length(100000)
+
+    logger.loud_log("Fetching HMM databases...")
 
     ## Fetch HMM databases- RVMT, NeoRdRp, NeoRdRp.2.1, TSA_Olendraite, RDRP-scan, Lucaprot
     rvmt_hmm_db = fetch_dbs.db_fetcher(db_dir).fetch_hmm_db_path("RVMT")
@@ -234,10 +244,9 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
 
     # Fetch mmseqs database
 
-    if verbose:
-        logger.loud_log("Fetching mmseqs databases.")
-    else:
-        logger.silent_log("Fetching mmseqs databases.")
+
+    logger.loud_log("Fetching Mmseqs2 databases...")
+
     mmseqs_db_path = fetch_dbs.db_fetcher(db_dir).fetch_mmseqs_db_path("mmseqs_refseq_riboviria_20250211")
 
     if verbose:
@@ -260,21 +269,17 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
     if not os.path.exists(outputs.tmp_dir):
         outputs.tmp_dir.mkdir(parents=True)
 
+    logger.loud_log("Databases fetched successfully.")
+
     if seq_type == 'nuc':
-        if verbose:
-            logger.loud_log("Nucleotide sequence detected.")
-        else:
-            logger.silent_log("Nucleotide sequence detected.")
+        logger.loud_log("Nucleotide sequence detected.")
 
         set_dict = {}
         translated_set_dict = {}
         df_list = []
 
         ## Filter out sequences with length less than 400 bp with seqkit
-        if verbose:
-            logger.loud_log("Filtering out sequences with length less than 400 bp.")
-        else:
-            logger.silent_log("Filtering out sequences with length less than 400 bp.")
+        logger.loud_log("Filtering out sequences with length less than 400 bp.")
 
         if not os.path.exists(outputs.seqkit_seq_output_dir):
             outputs.seqkit_seq_output_dir.mkdir(parents=True)
@@ -286,10 +291,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             logger.silent_log(f"Filtered sequence written to: { outputs.seqkit_seq_output_path}")
 
         ## Translate nucleotide sequences to protein sequences with seqkit
-        if verbose:
-            logger.loud_log("Translating nucleotide sequences to protein sequences.")
-        else:
-            logger.silent_log("Translating nucleotide sequences to protein sequences.")
+        logger.loud_log("Translating nucleotide sequences to protein sequences.")
 
         if not os.path.exists(outputs.seqkit_translate_output_dir):
             outputs.seqkit_translate_output_dir.mkdir(parents=True)
@@ -302,6 +304,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             logger.silent_log(f"Translated sequence written to: {outputs.seqkit_translate_output_path}")
 
         for db_name,db_path in zip(db_name_list, db_path_list):
+            logger.loud_log(f"Running HMMsearch for {db_name} database.")
 
             if verbose:
                 logger.loud_log(f"HMM output path: {outputs.hmm_output_path(db_name)}")
@@ -353,7 +356,9 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             ])
             df_list.append(df)
 
+            logger.loud_log(f"HMMsearch for {db_name} completed.")
 
+        logger.loud_log("HMMsearch completed.")
 
         if not os.path.exists(outputs.plot_outdir):
             outputs.plot_outdir.mkdir(parents=True)
@@ -361,6 +366,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         if not os.path.exists(outputs.tsv_outdir):
             outputs.tsv_outdir.mkdir(parents=True)
 
+        logger.loud_log("Consolidating results.")
 
         # Combine all the dataframes in the list
         combined_df = pl.concat(df_list, how='vertical_relaxed')
@@ -379,6 +385,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             logger.loud_log("No hits found by RdRpCATCH. Exiting.")
             return None
 
+        # Generate upset plot
+        logger.loud_log("Generating plots.")
 
         if len(db_name_list) > 1:
             if verbose:
@@ -411,6 +419,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         combined_set = set.union(*[value for value in set_dict.values()])
         translated_combined_set = set.union(*[value for value in translated_set_dict.values()])
 
+        logger.loud_log("Extracting RdRp contigs from the input file.")
+
         # Write a fasta file with all the contigs
         if not os.path.exists(outputs.fasta_output_dir):
             outputs.fasta_output_dir.mkdir(parents=True)
@@ -430,25 +440,21 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         if verbose:
             logger.loud_log(f"Contigs written to: {outputs.fasta_nuc_out_path}")
             logger.loud_log(f"Translated contigs written to: {outputs.fasta_prot_out_path}")
+            logger.loud_log(f"Trimmed contigs written to: {outputs.fasta_trimmed_out_path}")
         else:
             logger.silent_log(f"Contigs written to: {outputs.fasta_nuc_out_path}")
             logger.silent_log(f"Translated contigs written to: {outputs.fasta_prot_out_path}")
+            logger.silent_log(f"Trimmed contigs written to: {outputs.fasta_trimmed_out_path}")
 
         if not os.path.exists(outputs.mmseqs_tax_output_dir):
             outputs.mmseqs_tax_output_dir.mkdir(parents=True)
 
-        if verbose:
-            logger.loud_log("Running mmseqs easy-taxonomy for taxonomic annotation.")
-        else:
-            logger.silent_log("Running mmseqs easy-taxonomy for taxonomic annotation.")
+        logger.loud_log("Running mmseqs easy-taxonomy for taxonomic annotation.")
 
         mmseqs_tax.mmseqs(outputs.fasta_prot_out_path, mmseqs_db_path, outputs.mmseqs_tax_output_prefix,
                           outputs.mmseqs_tax_output_dir, 7, cpus, outputs.mmseqs_tax_log_path).run_mmseqs_easy_tax_lca()
 
-        if verbose:
-            logger.loud_log("Running mmseqs easy-search for taxonomic annotation.")
-        else:
-            logger.silent_log("Running mmseqs easy-search for taxonomic annotation.")
+        logger.loud_log("Running mmseqs easy-search for taxonomic annotation.")
 
         if not os.path.exists(outputs.mmseqs_e_search_output_dir):
             outputs.mmseqs_e_search_output_dir.mkdir(parents=True)
@@ -460,18 +466,17 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         utils.mmseqs_parser(outputs.mmseqs_tax_output_lca_path, outputs.mmseqs_e_search_output_path).tax_to_rdrpcatch(
             outputs.rdrpcatch_output_tsv, outputs.extended_rdrpcatch_output, seq_type)
 
+        logger.loud_log("Taxonomic annotation completed.")
 
     elif seq_type == 'prot':
 
-        if verbose:
-            logger.loud_log("Protein sequence detected.")
-        else:
-            logger.silent_log("Protein sequence detected.")
+        logger.loud_log("Protein sequence detected.")
 
         set_dict = {}
         df_list = []
 
         for db_name,db_path in zip (db_name_list, db_path_list):
+            logger.loud_log(f"Running HMMsearch for {db_name} database.")
 
             if verbose:
                 logger.loud_log(f"HMM output path: {outputs.hmm_output_path(db_name)}")
@@ -519,12 +524,17 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             ])
             df_list.append(df)
 
+            logger.loud_log(f"HMMsearch for {db_name} completed.")
+
+        logger.loud_log("HMMsearch completed.")
+
         if not os.path.exists(outputs.plot_outdir):
             outputs.plot_outdir.mkdir(parents=True)
 
         if not os.path.exists(outputs.tsv_outdir):
             outputs.tsv_outdir.mkdir(parents=True)
 
+        logger.loud_log("Consolidating results.")
 
         # Combine all the dataframes in the list
         combined_df = pl.concat(df_list, how='vertical_relaxed')
@@ -541,6 +551,9 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         if combined_df.is_empty():
             logger.loud_log("No hits found by RdRpCATCH. Exiting.")
             return None
+
+        # Generate upset plot
+        logger.loud_log("Generating plots.")
 
         if len(db_name_list) > 1:
             if verbose:
@@ -574,6 +587,9 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         # Extract all the contigs
         combined_set = set.union(*[value for value in set_dict.values()])
         # Write a fasta file with all the contigs
+
+        logger.loud_log("Extracting RdRp contigs from the input file.")
+
         if not os.path.exists(outputs.fasta_output_dir):
             outputs.fasta_output_dir.mkdir(parents=True)
 
@@ -600,11 +616,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         if not os.path.exists(outputs.mmseqs_tax_output_dir):
             outputs.mmseqs_tax_output_dir.mkdir(parents=True)
 
-        if verbose:
-            logger.loud_log("Running mmseqs easy-taxonomy for taxonomic annotation.")
-        else:
-            logger.silent_log("Running mmseqs easy-taxonomy for taxonomic annotation.")
-
+        logger.loud_log("Running mmseqs easy-taxonomy for taxonomic annotation.")
 
         mmseqs_tax.mmseqs(outputs.fasta_prot_out_path, mmseqs_db_path, outputs.mmseqs_tax_output_prefix,
                           outputs.mmseqs_tax_output_dir, 7, cpus, outputs.mmseqs_tax_log_path).run_mmseqs_easy_tax_lca()
@@ -612,10 +624,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         if not os.path.exists(outputs.mmseqs_e_search_output_dir):
             outputs.mmseqs_e_search_output_dir.mkdir(parents=True)
 
-        if verbose:
-            logger.loud_log("Running mmseqs easy-search for taxonomic annotation.")
-        else:
-            logger.silent_log("Running mmseqs easy-search for taxonomic annotation.")
+        logger.loud_log("Running mmseqs easy-search for taxonomic annotation.")
 
         mmseqs_tax.mmseqs(outputs.fasta_prot_out_path, mmseqs_db_path, outputs.mmseqs_e_search_output_dir,
                           outputs.mmseqs_e_search_output_path, 7, cpus, outputs.mmseqs_e_search_log_path).run_mmseqs_e_search()
@@ -624,11 +633,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             outputs.rdrpcatch_output_tsv, outputs.extended_rdrpcatch_output, seq_type)
 
 
-    end_time = logger.stop_timer(start_time, verbose)
-    if verbose:
-        logger.loud_log(f"Total Runtime: {end_time}")
-    else:
-        logger.silent_log(f"Total Runtime: {end_time}")
+
 
 
 
@@ -657,6 +662,11 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         else:
             logger.silent_log(f"Results bundled into: {archive_path}")
 
+    end_time = logger.stop_timer(start_time, verbose)
+
+    logger.loud_log(f"Total Runtime: {end_time}")
+
+    logger.loud_log("RdRpCATCH completed successfully.")
 
 
     return outputs.extended_rdrpcatch_output

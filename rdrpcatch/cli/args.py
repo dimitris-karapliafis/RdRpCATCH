@@ -115,30 +115,30 @@ def cli():
 @click.option('-gen_code', '--gen_code',
               type=click.INT,
               default=1,
-              help='Genetic code to use for translation. (default: 1) Possible genetic codes (supported by seqkit translate) :      1: The Standard Code       \n'
-                     '2: The Vertebrate Mitochondrial Code      \n'
-                     '3: The Yeast Mitochondrial Code       \n'
-                     '4: The Mold, Protozoan, and Coelenterate Mitochondrial Code and the Mycoplasma/Spiroplasma Code        \n'
-                     '5: The Invertebrate Mitochondrial Code        \n'
-                     '6: The Ciliate, Dasycladacean and Hexamita Nuclear Code       \n'
-                     '9: The Echinoderm and Flatworm Mitochondrial Code     \n'
-                    '10: The Euplotid Nuclear Code      \n'
-                    '11: The Bacterial, Archaeal and Plant Plastid Code     \n'
-                    '12: The Alternative Yeast Nuclear Code     \n'
-                    '13: The Ascidian Mitochondrial Code        \n'
-                    '14: The Alternative Flatworm Mitochondrial Code        \n'
-                    '16: Chlorophycean Mitochondrial Code       \n'
-                    '21: Trematode Mitochondrial Code       \n'
-                    '22: Scenedesmus obliquus Mitochondrial Code        \n'
-                    '23: Thraustochytrium Mitochondrial Code        \n'
-                    '24: Pterobranchia Mitochondrial Code       \n'
-                    '25: Candidate Division SR1 and Gracilibacteria Code        \n'
-                    '26: Pachysolen tannophilus Nuclear Code        \n'
-                    '27: Karyorelict Nuclear        \n'
-                    '28: Condylostoma Nuclear       \n'
-                    '29: Mesodinium Nuclear     \n'
-                    '30: Peritrich Nuclear      \n'
-                    '31: Blastocrithidia Nuclear        \n')
+              help='Genetic code to use for translation. (default: 1) Possible genetic codes (supported by seqkit translate) : 1: The Standard Code, '
+                     '2: The Vertebrate Mitochondrial Code, '
+                     '3: The Yeast Mitochondrial Code, '
+                     '4: The Mold, Protozoan, and Coelenterate Mitochondrial Code and the Mycoplasma/Spiroplasma Code, '
+                     '5: The Invertebrate Mitochondrial Code, '
+                     '6: The Ciliate, Dasycladacean and Hexamita Nuclear Code, '
+                     '9: The Echinoderm and Flatworm Mitochondrial Code, '
+                    '10: The Euplotid Nuclear Code, '
+                    '11: The Bacterial, Archaeal and Plant Plastid Code, '
+                    '12: The Alternative Yeast Nuclear Code, '
+                    '13: The Ascidian Mitochondrial Code, '
+                    '14: The Alternative Flatworm Mitochondrial Code, '
+                    '16: Chlorophycean Mitochondrial Code, '
+                    '21: Trematode Mitochondrial Code, '
+                    '22: Scenedesmus obliquus Mitochondrial Code, '
+                    '23: Thraustochytrium Mitochondrial Code, '
+                    '24: Pterobranchia Mitochondrial Code, '
+                    '25: Candidate Division SR1 and Gracilibacteria Code, '
+                    '26: Pachysolen tannophilus Nuclear Code, '
+                    '27: Karyorelict Nuclear, '
+                    '28: Condylostoma Nuclear, '
+                    '29: Mesodinium Nuclear, '
+                    '30: Peritrich Nuclear, '
+                    '31: Blastocrithidia Nuclear, ')
 @click.option('-bundle', '--bundle',
               is_flag=True,
               default=False,
@@ -147,9 +147,14 @@ def cli():
               is_flag=True,
               default=False,
               help="Keep temporary files (Expert users) (default: False)")
+@click.option('-overwrite', '--overwrite',
+              is_flag=True,
+              default=False,
+              help="Force overwrite of existing output directory. (default: False)")
+
 @click.pass_context
 def scan(ctx, input, output, db_options, db_dir, custom_dbs, seq_type, verbose, evalue,
-         incevalue, domevalue, incdomevalue, zvalue, cpus, length_thr, gen_code, bundle, keep_tmp):
+         incevalue, domevalue, incdomevalue, zvalue, cpus, length_thr, gen_code, bundle, keep_tmp, overwrite):
     """Scan sequences for RdRps."""
 
     # Create a rich table for displaying parameters
@@ -175,6 +180,7 @@ def scan(ctx, input, output, db_options, db_dir, custom_dbs, seq_type, verbose, 
     table.add_row("Genetic Code", str(gen_code))
     table.add_row("Bundle Output", "ON" if bundle else "OFF")
     table.add_row("Save Temporary Files", "ON" if keep_tmp else "OFF")
+    table.add_row("Force Overwrite", "ON" if overwrite else "OFF")
 
     console.print(Panel(table, title="Scan Configuration"))
 
@@ -207,7 +213,8 @@ def scan(ctx, input, output, db_options, db_dir, custom_dbs, seq_type, verbose, 
         length_thr=length_thr,
         gen_code=gen_code,
         bundle=bundle,
-        keep_tmp=keep_tmp
+        keep_tmp=keep_tmp,
+        overwrite=overwrite
     )
 
 # @cli.command("download", help="Download RdRpCATCH databases.")
