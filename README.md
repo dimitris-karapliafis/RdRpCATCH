@@ -14,7 +14,7 @@ that were positive for each sequence across all pHMM databases, and taxonomic in
 
 ** The tool has been modified to use [rolypoly](https://code.jgi.doe.gov/UNeri/rolypoly) code/approaches **
 
-![rdrpcatch_flowchart_v0.png](images%2Frdrpcatch_flowchart_v0.png)
+![rdrpcatch_flowchart_v0.png](images%2Frdrpcatch_illustration.png)
 
 ### Supported databases
 - NeoRdRp <sup>1</sup> : 1182 pHMMs 
