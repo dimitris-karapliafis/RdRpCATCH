@@ -170,7 +170,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
 
     logger.loud_log("Fetching HMM databases...")
 
-    ## Fetch HMM databases- RVMT, NeoRdRp, NeoRdRp.2.1, TSA_Olendraite, RDRP-scan, Lucaprot
+    ## Fetch HMM databases- RVMT, NeoRdRp, NeoRdRp.2.1, TSA_Olendraite, RDRP-scan, Lucaprot_HMM,Zayed_HMM
     rvmt_hmm_db = fetch_dbs.db_fetcher(db_dir).fetch_hmm_db_path("RVMT")
     if verbose:
         logger.loud_log(f"RVMT HMM database fetched from: {rvmt_hmm_db}")
@@ -202,19 +202,24 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
         logger.loud_log(f"RDRP-scan HMM database fetched from: {rdrpscan_hmm_db}")
     else:
         logger.silent_log(f"RDRP-scan HMM database fetched from: {rdrpscan_hmm_db}")
-    lucaprot_hmm_db = fetch_dbs.db_fetcher(db_dir).fetch_hmm_db_path("Lucaprot")
+    lucaprot_hmm_db = fetch_dbs.db_fetcher(db_dir).fetch_hmm_db_path("Lucaprot_HMM")
     if verbose:
         logger.loud_log(f"Lucaprot HMM database fetched from: {lucaprot_hmm_db}")
     else:
         logger.silent_log(f"Lucaprot HMM database fetched from: {lucaprot_hmm_db}")
+    zayed_hmm_db = fetch_dbs.db_fetcher(db_dir).fetch_hmm_db_path("Zayed_HMM")
+    if verbose:
+        logger.loud_log(f"Zayed HMM database fetched from: {zayed_hmm_db}")
+    else:
+        logger.silent_log(f"Zayed HMM database fetched from: {zayed_hmm_db}")
 
     db_name_list = []
     db_path_list = []
 
     ## Set up HMM databases
     if db_options == ['all']:
-        db_name_list = ["RVMT", "NeoRdRp", "NeoRdRp.2.1", "TSA_Olendraite_fam","TSA_Olendraite_gen", "RDRP-scan", "Lucaprot"]
-        db_path_list = [rvmt_hmm_db, neordrp_hmm_db, neordrp_2_hmm_db, tsa_olen_fam_hmm_db,tsa_olen_gen_hmm_db, rdrpscan_hmm_db, lucaprot_hmm_db]
+        db_name_list = ["RVMT", "NeoRdRp", "NeoRdRp.2.1", "TSA_Olendraite_fam","TSA_Olendraite_gen", "RDRP-scan", "Lucaprot_HMM", "Zayed_HMM"]
+        db_path_list = [rvmt_hmm_db, neordrp_hmm_db, neordrp_2_hmm_db, tsa_olen_fam_hmm_db,tsa_olen_gen_hmm_db, rdrpscan_hmm_db, lucaprot_hmm_db, zayed_hmm_db]
 
     else:
         for db in db_options:
@@ -236,9 +241,12 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             elif db == "RDRP-scan".lower():
                 db_name_list.append("RDRP-scan")
                 db_path_list.append(rdrpscan_hmm_db)
-            elif db == "Lucaprot".lower():
-                db_name_list.append("Lucaprot")
+            elif db == "Lucaprot_HMM".lower():
+                db_name_list.append("Lucaprot_HMM")
                 db_path_list.append(lucaprot_hmm_db)
+            elif db == "Zayed_HMM".lower():
+                db_name_list.append("Zayed_HMM")
+                db_path_list.append(zayed_hmm_db)
             else:
                 raise Exception(f"Invalid database option: {db}")
 

@@ -26,7 +26,7 @@ def parse_comma_separated_options(ctx, param, value):
         return ['all']
 
     allowed_choices = ['RVMT', 'NeoRdRp', 'NeoRdRp.2.1', 'TSA_Olendraite_fam', 'TSA_Olendraite_gen', 'RDRP-scan',
-                       'Lucaprot', 'all']
+                       'Lucaprot_HMM, Zayed_HMM', 'all']
     lower_choices = [choice.lower() for choice in allowed_choices]
     options = value.split(',')
     lower_options = [option.lower() for option in options]
@@ -73,7 +73,7 @@ def cli():
               callback=parse_comma_separated_options,
               default="all",
               help="Comma-separated list of databases to search against. Valid options: RVMT, NeoRdRp, NeoRdRp.2.1,"
-                   " TSA_Olendraite_fam, TSA_Olendraite_gen, RDRP-scan,Lucaprot, all")
+                   " TSA_Olendraite_fam, TSA_Olendraite_gen, RDRP-scan,Lucaprot_HMM, Zayed_HMM, all")
 @click.option("--custom-dbs",
               help="Path to directory containing custom MSAs/pHMM files to use as additional databases",
               type=click.Path(exists=True, path_type=Path))

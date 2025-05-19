@@ -111,25 +111,25 @@ Command to download pre-compiled databases from Zenodo. If the databases are alr
 ### rdrpcatch scan:
 Search a given input using selected RdRp databases.  
 
-| Argument | Short Flag | Type | Description |
-|----------|------------|------|-------------|
-| `--input` | `-i` | FILE | Path to the input FASTA file. [required] |
-| `--output` | `-o` | DIRECTORY | Path to the output directory. [required] |
-| `--db_dir` | `-db_dir` | PATH | Path to the directory containing RdRpCATCH databases. [required] |
-| `--db_options` | `-dbs` | TEXT | Comma-separated list of databases to search against. Valid options: RVMT, NeoRdRp, NeoRdRp.2.1, TSA_Olendraite_fam, TSA_Olendraite_gen, RDRP-scan, Lucaprot, all |
-| `--custom-dbs` | | PATH | Path to directory containing custom MSAs/pHMM files to use as additional databases |
-| `--seq_type` | `-seq_type` | TEXT | Type of sequence to search against: (prot,nuc) Default: unknown |
-| `--verbose` | `-v` | FLAG | Print verbose output. |
-| `--evalue` | `-e` | FLOAT | E-value threshold for HMMsearch. (default: 1e-5) |
-| `--incevalue` | `-incE` | FLOAT | Inclusion E-value threshold for HMMsearch. (default: 1e-5) |
-| `--domevalue` | `-domE` | FLOAT | Domain E-value threshold for HMMsearch. (default: 1e-5) |
-| `--incdomevalue` | `-incdomE` | FLOAT | Inclusion domain E-value threshold for HMMsearch. (default: 1e-5) |
-| `--zvalue` | `-z` | INTEGER | Number of sequences to search against. (default: 1000000) |
-| `--cpus` | `-cpus` | INTEGER | Number of CPUs to use for HMMsearch. (default: 1) |
-| `--length_thr` | `-length_thr` | INTEGER | Minimum length threshold for seqkit seq. (default: 400) |
-| `--gen_code` | `-gen_code` | INTEGER | Genetic code to use for translation. (default: 1) |
-| `--bundle` | `-bundle` |  |  Bundle the output files into a single archive. (default: False) |
-| `--keep_tmp` | `-keep_tmp` |  | Keep the temporary files generated during the analysis. (default: False) |
+| Argument | Short Flag | Type | Description                                                                                                                                                                    |
+|----------|------------|------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--input` | `-i` | FILE | Path to the input FASTA file. [required]                                                                                                                                       |
+| `--output` | `-o` | DIRECTORY | Path to the output directory. [required]                                                                                                                                       |
+| `--db_dir` | `-db_dir` | PATH | Path to the directory containing RdRpCATCH databases. [required]                                                                                                               |
+| `--db_options` | `-dbs` | TEXT | Comma-separated list of databases to search against. Valid options: RVMT, NeoRdRp, NeoRdRp.2.1, TSA_Olendraite_fam, TSA_Olendraite_gen, RDRP-scan, Lucaprot_HMM,Zayed_HMM, all |
+| `--custom-dbs` | | PATH | Path to directory containing custom MSAs/pHMM files to use as additional databases                                                                                             |
+| `--seq_type` | `-seq_type` | TEXT | Type of sequence to search against: (prot,nuc) Default: unknown                                                                                                                |
+| `--verbose` | `-v` | FLAG | Print verbose output.                                                                                                                                                          |
+| `--evalue` | `-e` | FLOAT | E-value threshold for HMMsearch. (default: 1e-5)                                                                                                                               |
+| `--incevalue` | `-incE` | FLOAT | Inclusion E-value threshold for HMMsearch. (default: 1e-5)                                                                                                                     |
+| `--domevalue` | `-domE` | FLOAT | Domain E-value threshold for HMMsearch. (default: 1e-5)                                                                                                                        |
+| `--incdomevalue` | `-incdomE` | FLOAT | Inclusion domain E-value threshold for HMMsearch. (default: 1e-5)                                                                                                              |
+| `--zvalue` | `-z` | INTEGER | Number of sequences to search against. (default: 1000000)                                                                                                                      |
+| `--cpus` | `-cpus` | INTEGER | Number of CPUs to use for HMMsearch. (default: 1)                                                                                                                              |
+| `--length_thr` | `-length_thr` | INTEGER | Minimum length threshold for seqkit seq. (default: 400)                                                                                                                        |
+| `--gen_code` | `-gen_code` | INTEGER | Genetic code to use for translation. (default: 1)                                                                                                                              |
+| `--bundle` | `-bundle` |  | Bundle the output files into a single archive. (default: False)                                                                                                                |
+| `--keep_tmp` | `-keep_tmp` |  | Keep the temporary files generated during the analysis. (default: False)                                                                                                       |
 
 
 
