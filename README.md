@@ -23,7 +23,8 @@ that were positive for each sequence across all pHMM databases, and taxonomic in
 - RdRp-Scan <sup>4</sup> : 68 pHMMs
 - TSA_Oleandrite_fam <sup>5</sup>: 77 pHMMs 
 - TSA_Oleandrite_gen <sup>6</sup> : 341 pHMMs
-- LucaProt_pHMM<sup>7 </sup> : 754 pHMMs 
+- LucaProt_HMM<sup>7 </sup> : 754 pHMMs
+- Zayed_HMM<sup>8 </sup> : 2489 pHMMs
 
 1. Sakaguchi, S. et al. (2022) 'NeoRdRp: A comprehensive dataset for identifying RNA-dependent RNA polymerases of various RNA viruses from metatranscriptomic data', *Microbes and Environments*, 37(3). [doi:10.1264/jsme2.me22001](https://doi.org/10.1264/jsme2.me22001)
 2. Sakaguchi, S., Nakano, T. and Nakagawa, S. (2024) 'Neordrp2 with improved seed data, annotations, and scoring', *Frontiers in Virology*, 4. [doi:10.3389/fviro.2024.1378695](https://doi.org/10.3389/fviro.2024.1378695)
@@ -31,7 +32,8 @@ that were positive for each sequence across all pHMM databases, and taxonomic in
 4. Charon, J. et al. (2022) 'RDRP-Scan: A bioinformatic resource to identify and annotate divergent RNA viruses in metagenomic sequence data', *Virus Evolution*, 8(2). [doi:10.1093/ve/veac082](https://doi.org/10.1093/ve/veac082)
 5. Olendraite, I., Brown, K. and Firth, A.E. (2023) 'Identification of RNA virus–derived rdrp sequences in publicly available transcriptomic data sets', *Molecular Biology and Evolution*, 40(4). [doi:10.1093/molbev/msad060](https://doi.org/10.1093/molbev/msad060)
 6. Olendraite, I. (2021) 'Mining diverse and novel RNA viruses in transcriptomic datasets', Apollo. Available at: [https://www.repository.cam.ac.uk/items/1fabebd2-429b-45c9-b6eb-41d27d0a90c2](https://www.repository.cam.ac.uk/items/1fabebd2-429b-45c9-b6eb-41d27d0a90c2)
-7. Hou, X. et al. (2024) 'Using artificial intelligence to document the hidden RNA virosphere', *Cell*, 187(24). [doi:10.1016/j.cell.2024.09.027](https://doi.org/10.1016/j.cell.2024.09.027)
+7. Hou, X. and He, Y. et al. (2024) 'Using artificial intelligence to document the hidden RNA virosphere', *Cell*, 187(24). [doi:10.1016/j.cell.2024.09.027](https://doi.org/10.1016/j.cell.2024.09.027)
+8. Zayed, A. A., et al. (2022)  'Cryptic and abundant marine viruses at the evolutionary origins of Earth’s RNA virome.' *Science*, 376(6589), 156–162. [doi:10.1126/science.abm5847](https://doi.org/10.1126/science.abm5847)
 
 
 ## Installation
