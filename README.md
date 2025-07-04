@@ -111,7 +111,7 @@ rdrpcatch scan -i path/to/input.fasta -o path/to/output_dir -db-dir path/to/data
 ## Input description
 The input file can be one or more nucleotide or protein sequences in multi-fasta format. 
 The output directory is where the results will be stored. We recommend specifying the type of the sequence in the command line,
-An optional argument `--seq_type` (nuc or prot) can be used to specify if the input fasta file sequences are nucleotide or amino acid.
+An optional argument `--seq-type` (nuc or prot) can be used to specify if the input fasta file sequences are nucleotide or amino acid.
 
 
 ## Setting up custom pHMM databases
@@ -132,7 +132,7 @@ rdrpcatch databases --add-custom-db path/to/my_custom_rdrp_database --destinatio
 - The custom database can then be used with the `rdrpcatch scan` command by specifying the `--custom-dbs` argument as follows:
 - 
 ```bash
-rdrpcatch scan -i path/to/input.fasta -o path/to/output_dir -db_dir path/to/database --custom-dbs custom_database_name
+rdrpcatch scan -i path/to/input.fasta -o path/to/output_dir -db-dir path/to/database --custom-dbs custom_database_name
 ```
 
 - The `custom_database_name` should be the name of the directory that contains the custom pHMM files, without the path.
@@ -142,7 +142,7 @@ rdrpcatch scan -i path/to/input.fasta -o path/to/output_dir -db_dir path/to/data
 - For example, if you want to use the NeoRdRp and RVMT databases along with your custom database, you would use the following command:
 
 ```bash
-rdrpcatch scan -i path/to/input.fasta -o path/to/output_dir -db_dir path/to/database --db_options NeoRdRp,RVMT --custom-dbs my_custom_rdrp_database
+rdrpcatch scan -i path/to/input.fasta -o path/to/output_dir -db-dir path/to/database --db-options NeoRdRp,RVMT --custom-dbs my_custom_rdrp_database
 ```
 
 - Note: By default, RdRpCATCH will search against all pre-compiled databases if no `--db_options` argument is specified. If you want to use only the custom databases, you can specify `--db_options none` to avoid searching against the pre-compiled databases.
