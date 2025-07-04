@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rdrpcatch"
-version = "0.0.7"
+version = "0.0.8"
 authors = [
     {name = "Dimitris Karapliafis", email = "dimitris.karapliafis@wur.nl"},
     {name = "Uri Neri", email = "uneri@lbl.gov"},

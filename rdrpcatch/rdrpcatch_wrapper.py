@@ -53,7 +53,7 @@ def bundle_results(output_dir, prefix):
     
     return archive_path
 
-def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,incdomE,domE,incE,z, cpus, length_thr, gen_code, bundle, keep_tmp, overwrite):
+def run_scan(input_file, output_dir, db_options, db_dir, custom_dbs,  seq_type, verbose, e,incdomE,domE,incE,z, cpus, length_thr, gen_code, bundle, keep_tmp, overwrite):
     """
     Run RdRpCATCH scan.
 
@@ -127,7 +127,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
 
     logger.silent_log(f"Input File: {input_file}")
     logger.silent_log(f"Output Directory: {output_dir}")
-    logger.silent_log(f"Databases: {db_options}")
+    logger.silent_log(f"Supported Databases: {db_options}")
+    logger.silent_log(f"Custom Databases: {custom_dbs}")
     logger.silent_log(f"Database Directory: {db_dir}")
     logger.silent_log(f"Sequence Type: {seq_type}")
     logger.silent_log(f"Verbose Mode: {'ON' if verbose else 'OFF'}")
@@ -220,7 +221,14 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
     if db_options == ['all']:
         db_name_list = ["RVMT", "NeoRdRp", "NeoRdRp.2.1", "TSA_Olendraite_fam","TSA_Olendraite_gen", "RDRP-scan", "Lucaprot_HMM", "Zayed_HMM"]
         db_path_list = [rvmt_hmm_db, neordrp_hmm_db, neordrp_2_hmm_db, tsa_olen_fam_hmm_db,tsa_olen_gen_hmm_db, rdrpscan_hmm_db, lucaprot_hmm_db, zayed_hmm_db]
-
+    elif db_options == ['none'] and not custom_dbs:
+        raise Exception("No databases selected. Please select at least one database or provide custom databases.")
+    elif db_options == ['none'] and custom_dbs:
+        logger.loud_log("No supported databases selected, but custom databases provided. Using only custom databases.")
+        if not os.path.exists(os.path.join(db_dir, "custom_dbs")):
+            raise Exception(f"Custom databases directory not found: {os.path.join(db_dir, 'custom_dbs')}. Please"
+                            f" use rdrpcatch databases to create a valid custom database as described in the "
+                            f"documentation.")
     else:
         for db in db_options:
             if db == "RVMT".lower():
@@ -250,9 +258,33 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
             else:
                 raise Exception(f"Invalid database option: {db}")
 
+    ## Check if custom databases are provided
+    if custom_dbs:
+
+        if not os.path.exists(os.path.join(db_dir, "custom_dbs")):
+            raise Exception(f"Custom databases directory not found: {os.path.join(db_dir, 'custom_dbs')}. Please"
+                            f" use rdrpcatch databases to create a valid custom database as described in the "
+                            f"documentation.")
+
+        custom_db_names = custom_dbs.split(',')
+        for custom_db in custom_db_names:
+            if verbose:
+                logger.loud_log(f"Fetching custom database: {custom_db}")
+            else:
+                logger.silent_log(f"Fetching custom database: {custom_db}")
+
+            custom_db = custom_db.strip()
+            custom_db_path = fetch_dbs.db_fetcher(db_dir).fetch_hmm_db_path(custom_db)
+            db_name_list.append(custom_db)
+            db_path_list.append(custom_db_path)
+
+            if verbose:
+                logger.loud_log(f"Custom database {custom_db} fetched from: {custom_db_path}")
+            else:
+                logger.silent_log(f"Custom database {custom_db} fetched from: {custom_db_path}")
+
+
     # Fetch mmseqs database
-
-
     logger.loud_log("Fetching Mmseqs2 databases...")
 
     mmseqs_db_path = fetch_dbs.db_fetcher(db_dir).fetch_mmseqs_db_path("mmseqs_refseq_riboviria_20250211")
@@ -390,7 +422,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
 
         # Check if the combined dataframe is empty
         if combined_df.is_empty():
-            logger.loud_log("No hits found by RdRpCATCH. Exiting.")
+            db_name_string = ', '.join(db_name_list)
+            logger.loud_log(f"No hits found by RdRpCATCH for databases {db_name_string}. Exiting.")
             return None
 
         # Generate upset plot
@@ -557,7 +590,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, seq_type, verbose, e,in
 
         # Check if the combined dataframe is empty
         if combined_df.is_empty():
-            logger.loud_log("No hits found by RdRpCATCH. Exiting.")
+            db_name_string = ', '.join(db_name_list)
+            logger.loud_log(f"No hits found by RdRpCATCH for databases {db_name_string}. Exiting.")
             return None
 
         # Generate upset plot

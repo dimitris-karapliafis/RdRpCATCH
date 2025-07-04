@@ -26,7 +26,7 @@ def parse_comma_separated_options(ctx, param, value):
         return ['all']
 
     allowed_choices = ['RVMT', 'NeoRdRp', 'NeoRdRp.2.1', 'TSA_Olendraite_fam', 'TSA_Olendraite_gen', 'RDRP-scan',
-                       'Lucaprot_HMM, Zayed_HMM', 'all']
+                       'Lucaprot_HMM', 'Zayed_HMM', 'all', 'none']
     lower_choices = [choice.lower() for choice in allowed_choices]
     options = value.split(',')
     lower_options = [option.lower() for option in options]
@@ -66,17 +66,16 @@ def cli():
 @click.option("-o", "--output",
               help="Path to the output directory.",
               type=click.Path(exists=False, file_okay=False, writable=True, path_type=Path), required=True)
-@click.option("-db_dir", "--db_dir",
+@click.option("-db-dir", "--db-dir",
               help="Path to the directory containing RdRpCATCH databases.",
               type=click.Path(exists=True, dir_okay=True, readable=True, path_type=Path),required=True)
-@click.option("-dbs", "--db_options",
+@click.option("-dbs", "--db-options",
               callback=parse_comma_separated_options,
               default="all",
               help="Comma-separated list of databases to search against. Valid options: RVMT, NeoRdRp, NeoRdRp.2.1,"
-                   " TSA_Olendraite_fam, TSA_Olendraite_gen, RDRP-scan,Lucaprot_HMM, Zayed_HMM, all")
+                   " TSA_Olendraite_fam, TSA_Olendraite_gen, RDRP-scan,Lucaprot_HMM, Zayed_HMM, all, none. ")
 @click.option("--custom-dbs",
-              help="Path to directory containing custom MSAs/pHMM files to use as additional databases",
-              type=click.Path(exists=True, path_type=Path))
+              help="Path to directory containing custom MSAs/pHMM files to use as additional databases")
 @click.option("-seq_type", "--seq_type",
               type=click.STRING,
               default=None,
@@ -112,7 +111,7 @@ def cli():
               type=click.INT,
               default=400,
               help="Minimum length threshold for seqkit seq. (default: 400)")
-@click.option('-gen_code', '--gen_code',
+@click.option('-gen-code', '--gen_code',
               type=click.INT,
               default=1,
               help='Genetic code to use for translation. (default: 1) Possible genetic codes (supported by seqkit translate) : 1: The Standard Code, '
@@ -143,7 +142,7 @@ def cli():
               is_flag=True,
               default=False,
               help="Bundle the output files into a single archive. (default: False)")
-@click.option('-keep_tmp', '--keep_tmp',
+@click.option('-keep-tmp', '--keep_tmp',
               is_flag=True,
               default=False,
               help="Keep temporary files (Expert users) (default: False)")
@@ -164,7 +163,7 @@ def scan(ctx, input, output, db_options, db_dir, custom_dbs, seq_type, verbose, 
 
     table.add_row("Input File", str(input))
     table.add_row("Output Directory", str(output))
-    table.add_row("Databases", ", ".join(db_options))
+    table.add_row("Supported databases", ", ".join(db_options))
     table.add_row("Database Directory", str(db_dir))
     if custom_dbs:
         table.add_row("Custom Databases", str(custom_dbs))
@@ -184,24 +183,13 @@ def scan(ctx, input, output, db_options, db_dir, custom_dbs, seq_type, verbose, 
 
     console.print(Panel(table, title="Scan Configuration"))
 
-    # Add custom databases if provided
-    if custom_dbs:
-        db = db_fetcher(db_dir)
-        if os.path.isfile(custom_dbs):
-            db.add_custom_db(custom_dbs)
-        else:
-            for item in os.listdir(custom_dbs):
-                item_path = os.path.join(custom_dbs, item)
-                if os.path.isfile(item_path) and item_path.endswith(('.hmm', '.h3m', '.msa', '.sto', '.fasta', '.fa')):
-                    db.add_custom_db(item_path)
-                elif os.path.isdir(item_path):
-                    db.add_custom_db(item_path, item)
 
     run_scan(
         input_file=input,
         output_dir=output,
         db_options=db_options,
         db_dir=db_dir,
+        custom_dbs=custom_dbs,
         seq_type=seq_type,
         verbose=verbose,
         e=evalue,
@@ -217,29 +205,6 @@ def scan(ctx, input, output, db_options, db_dir, custom_dbs, seq_type, verbose, 
         overwrite=overwrite
     )
 
-# @cli.command("download", help="Download RdRpCATCH databases.")
-# @click.option("--destination_dir", "-dest",
-#               help="Path to the directory to download HMM databases.",
-#               type=click.Path(exists=False, file_okay=False, writable=True, path_type=Path), required=True)
-# @click.option("--check-updates", "-u",
-#               is_flag=True,
-#               help="Check for database updates")
-# @click.pass_context
-# def download(ctx, destination_dir, check_updates):
-#     """Download RdRpCATCH databases."""
-#
-#     # if check_updates:
-#     #     db = db_fetcher(destination_dir)
-#     #     version_info = db.check_db_updates()
-#     #     if version_info:
-#     #         console.print("Current database versions:")
-#     #         for db_name, info in version_info.items():
-#     #             console.print(f"- {db_name}: {info}")
-#     #     else:
-#     #         console.print("No version information available")
-#     #     return
-#
-#     run_download(destination_dir)
 #
 # # @cli.command("gui", help="Launch the GUI.")
 # # @click.pass_context
@@ -251,17 +216,41 @@ def scan(ctx, input, output, db_options, db_dir, custom_dbs, seq_type, verbose, 
 
 
 
-@cli.command("download", help="Download &  update RdRpCATCH databases. If databases are already installed in the "
+@cli.command("databases", help="Download &  update RdRpCATCH databases. If databases are already installed in the "
                               "specified directory,"
                               " it will check for updates and download the latest version if available.")
-@click.option("--destination_dir", "-dest",
+@click.option("--destination-dir", "-dest",
               help="Path to directory to download databases",
               type=click.Path(path_type=Path, file_okay=False, writable=True),
               required=True)
 @click.option("--concept-doi", default="10.5281/zenodo.14358348",
               help="Zenodo Concept DOI for database repository")
-def download(destination_dir: Path, concept_doi: str):
+@click.option("--add-custom-db", "-cdb",
+              help="Path to a custom, pressed pHMM database directory. This only works"
+                   "if the supported  databases have already been downloaded."
+                   " Please point to the directory the databases are stored ('rdrpcatch_dbs') using"
+                   "the '--destination-dir' flag."
+
+    , type = click.Path(exists=True, dir_okay=True, readable=True, path_type=Path))
+
+def databases(destination_dir: Path, concept_doi: str, add_custom_db: Path | None = None):
     """Handle database download/update workflow"""
+
+    if add_custom_db:
+        if not destination_dir.exists():
+            console.print("[red]× Destination directory does not exist![/red]")
+            raise click.Abort()
+        if not destination_dir.is_dir():
+            console.print("[red]× Destination path is not a directory![/red]")
+            raise click.Abort()
+
+        db = db_fetcher(destination_dir)
+        db.add_custom_db(add_custom_db)
+
+        console.print(f"[green]✓ Custom database added successfully to {destination_dir}[/green]")
+
+
+
     downloader = ZenodoDownloader(concept_doi, destination_dir)
 
     try:

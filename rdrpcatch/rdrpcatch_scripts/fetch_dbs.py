@@ -49,20 +49,23 @@ class db_fetcher:
 
         # Copy the database file
         if os.path.isfile(db_path):
-            shutil.copy2(db_path, target_path)
+            raise ValueError("Custom database must be a directory, not a file. Name the directory as the database name,"
+                             "and include a pressed HMMER HMM database inside. For directions, see the README.md file.")
+
         elif os.path.isdir(db_path):
             if os.path.exists(target_path):
                 shutil.rmtree(target_path)
             shutil.copytree(db_path, target_path)
 
-        # Update version info
-        version_info = self._get_db_version()
-        version_info.setdefault('custom_dbs', {})
-        version_info['custom_dbs'][db_name] = {
-            'added': datetime.datetime.now().isoformat(),
-            'path': target_path
-        }
-        self._save_db_version(version_info)
+        # For now, we stop saving the version info, cause it messes up with the download module.
+        # # Update version info
+        # version_info = self._get_db_version()
+        # version_info.setdefault('custom_dbs', {})
+        # version_info['custom_dbs'][db_name] = {
+        #     'added': datetime.datetime.now().isoformat(),
+        #     'path': target_path
+        # }
+        # self._save_db_version(version_info)
 
     def _resolve_rdrpcatch_path(self):
         """Automatically detect correct database path structure"""
@@ -93,6 +96,7 @@ class db_fetcher:
 
         # First check custom databases
         if os.path.exists(self.custom_db_dir):
+
             custom_path = os.path.join(self.custom_db_dir, db_name)
             if os.path.exists(custom_path):
                 if os.path.isfile(custom_path) and custom_path.endswith(('.h3m', '.hmm')):

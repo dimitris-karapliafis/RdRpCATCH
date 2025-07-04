@@ -12,7 +12,19 @@ library to perform pHMM searches.  In addition, the tool scans each sequence (aa
 In addition, RdRpCATCH provides information about the number of profiles
 that were positive for each sequence across all pHMM databases, and taxonomic information based on the MMseqs2 easy-taxonomy and search modules against a custom RefSeq Riboviria database.
 
+### Version 0.0.7 -> 0.0.8 Changelog
+- Added support for custom pHMM databases. See the [Setting up custom pHMM databases](#setting-up-custom-phmm-databases) section for more information.
+- All specified flags use '-' instead of '_' (e.g. `--db-dir` instead of `--db_dir`). 
+- Fixed issue with specifying the Lucaprot_HMM and Zayed_HMM databases in the `--db-options` argument.
+- Command `rdrpcatch download` renamed as `rdrpcatch databases` for clarity, as it now supports adding custom pHMM
+databases to the RdRpCATCH databases. This is facilitated by the `--add-custom-db` argument.
+- Added none option to the `--db-options` argument to search only against custom databases.
+
+
+
 ** The tool has been modified to use [rolypoly](https://code.jgi.doe.gov/UNeri/rolypoly) code/approaches **
+
+
 
 ![rdrpcatch_flowchart_v0.png](images%2Frdrpcatch_illustration.png)
 
@@ -21,8 +33,8 @@ that were positive for each sequence across all pHMM databases, and taxonomic in
 - NeoRdRp2 <sup>2</sup>: 19394 pHMMs  
 - RVMT <sup>3</sup>: 710 pHMMs  
 - RdRp-Scan <sup>4</sup> : 68 pHMMs
-- TSA_Oleandrite_fam <sup>5</sup>: 77 pHMMs 
-- TSA_Oleandrite_gen <sup>6</sup> : 341 pHMMs
+- TSA_Olendraite_fam <sup>5</sup>: 77 pHMMs 
+- TSA_Olendraite_gen <sup>6</sup> : 341 pHMMs
 - LucaProt_HMM<sup>7 </sup> : 754 pHMMs
 - Zayed_HMM<sup>8 </sup> : 2489 pHMMs
 
@@ -34,6 +46,7 @@ that were positive for each sequence across all pHMM databases, and taxonomic in
 6. Olendraite, I. (2021) 'Mining diverse and novel RNA viruses in transcriptomic datasets', Apollo. Available at: [https://www.repository.cam.ac.uk/items/1fabebd2-429b-45c9-b6eb-41d27d0a90c2](https://www.repository.cam.ac.uk/items/1fabebd2-429b-45c9-b6eb-41d27d0a90c2)
 7. Hou, X. and He, Y. et al. (2024) 'Using artificial intelligence to document the hidden RNA virosphere', *Cell*, 187(24). [doi:10.1016/j.cell.2024.09.027](https://doi.org/10.1016/j.cell.2024.09.027)
 8. Zayed, A. A., et al. (2022)  'Cryptic and abundant marine viruses at the evolutionary origins of Earth’s RNA virome.' *Science*, 376(6589), 156–162. [doi:10.1126/science.abm5847](https://doi.org/10.1126/science.abm5847)
+
 
 
 ## Installation
@@ -74,12 +87,15 @@ Activate the environment and download the RdRpCATCH databases:
 
 ```bash 
 conda activate rdrpcatch
-rdrpcatch download --destination_dir path/to/store/databases
+rdrpcatch databases --destination_dir path/to/store/databases
 ```
 
 * Note 1: The databases are large files and may take some time to download (~ 3 GB).
 * Note 2: The databases are stored in the specified directory, and the path is required to run RdRpCATCH.
 * Note 3: If you encounter an SSL error while downloading, please try again. The error seems to appear sporadically during testing, and a simple re-initiation of the downloading process seems to fix it. 
+
+
+
 
 ## Usage
 RdRpCATCH can be used as a CLI tool as follows:
@@ -89,8 +105,43 @@ RdRpCATCH can be used as a CLI tool as follows:
 # conda activate rdrpcatch
 
 # scan the input fasta file with the selected databases
-rdrpcatch scan -i path/to/input.fasta -o path/to/output_dir -db_dir path/to/database
+rdrpcatch scan -i path/to/input.fasta -o path/to/output_dir -db-dir path/to/database
 ```
+
+## Setting up custom pHMM databases
+It is possible to use custom pHMM databases with RdRpCATCH. As a prerequisite, you need to install the RdRpCATCH 
+databases using the `rdrpcatch databases` command as described above, to a directory of your choice.
+
+The custom databases should be formatted as follows:
+
+- First create a directory and give it a descriptive name, e.g. `my_custom_rdrp_database`. Important: The name should not contain  comma `,` characters.
+- Inside the directory put your custom pHMM HMMER pressed database. You can use the `hmmpress` command of HMMER to create the pressed database from your custom HMM file. This creates a set of files with the same name as the original HMM file, but with different extensions (e.g. `.h3f`, `.h3i`, `.h3m`, `.h3p`).  The directory should contain all these files. Please refer to the HMMER manual for more information on how to create a pressed database from an HMM file. (http://eddylab.org/software/hmmer/Userguide.pdf) 
+- Next you can add the directory to the custom databases that are readable by RdRpCATCH. This can be done by using the rdrpcatch databases command as follows:
+
+```bash
+rdrpcatch databases --add-custom-db path/to/my_custom_rdrp_database --destination-dir path/that/contains/rdrpcatch/databases
+```
+
+- This will add the custom database to the list of databases that can be used with RdRpCATCH.
+- The custom database can then be used with the `rdrpcatch scan` command by specifying the `--custom-dbs` argument as follows:
+- 
+```bash
+rdrpcatch scan -i path/to/input.fasta -o path/to/output_dir -db_dir path/to/database --custom-dbs custom_database_name
+```
+
+- The `custom_database_name` should be the name of the directory that contains the custom pHMM files, without the path.
+- For example, if the custom database is stored in `path/to/my_custom_rdrp_database`, you would use `--custom-dbs my_custom_rdrp_database` in the command line.
+- You can add multiple custom databases by installing them in the same way and specifying them  by separating them with commas, e.g. `--custom-dbs my_custom_rdrp_database,another_custom_database`.
+- The custom databases can be used in combination with the pre-compiled databases provided by RdRpCATCH. To do this, you can specify the `--db_options` argument with the names of the pre-compiled databases you want to use, and specify the custom databases with the `--custom-dbs` argument.
+- For example, if you want to use the NeoRdRp and RVMT databases along with your custom database, you would use the following command:
+
+```bash
+rdrpcatch scan -i path/to/input.fasta -o path/to/output_dir -db_dir path/to/database --db_options NeoRdRp,RVMT --custom-dbs my_custom_rdrp_database
+```
+
+- Note: By default, RdRpCATCH will search against all pre-compiled databases if no `--db_options` argument is specified. If you want to use only the custom databases, you can specify `--db_options none` to avoid searching against the pre-compiled databases.
+
+
 ### input: 
 The input file can be one or more nucleotide or protein sequences in multi-fasta format. 
 The output directory is where the results will be stored. We recommend specifying the type of the sequence in the command line,
@@ -99,10 +150,10 @@ An optional argument `--seq_type` (nuc or prot) can be used to specify if the in
 ## Commands
 The following two commands are available in RdRpCATCH:  
 * [`rdrpcatch scan`](#rdrpcatch-scan)  
-* [`rdrpcatch download`](#rdrpcatch-download)
+* [`rdrpcatch databases`](#rdrpcatch-download)
 
-### rdrpcatch download:
-Command to download pre-compiled databases from Zenodo. If the databases are already downloaded in the specified directory
+### rdrpcatch databases:
+Command to download pre-compiled databases from Zenodo and to set up custom databases. If the databases are already downloaded in the specified directory
 , the command will check for updates and download the latest version if available.
 
 | Argument | Short Flag | Type | Description                                                 |
@@ -110,28 +161,30 @@ Command to download pre-compiled databases from Zenodo. If the databases are alr
 | `--destination_dir` | `-dest` | PATH | Path to the directory to download HMM databases. [required] |
 | `--concept-doi` | `` | TEXT | Zenodo Concept DOI for database repository                  |
 | `--help` | `` |  | Show help message and exit                                  |
+| `--add-custom-db` | `` | PATH | Path to the directory containing custom pHMM files to add to the RdRpCATCH databases. |
+
 ### rdrpcatch scan:
 Search a given input using selected RdRp databases.  
 
-| Argument | Short Flag | Type | Description                                                                                                                                                                    |
-|----------|------------|------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `--input` | `-i` | FILE | Path to the input FASTA file. [required]                                                                                                                                       |
-| `--output` | `-o` | DIRECTORY | Path to the output directory. [required]                                                                                                                                       |
-| `--db_dir` | `-db_dir` | PATH | Path to the directory containing RdRpCATCH databases. [required]                                                                                                               |
-| `--db_options` | `-dbs` | TEXT | Comma-separated list of databases to search against. Valid options: RVMT, NeoRdRp, NeoRdRp.2.1, TSA_Olendraite_fam, TSA_Olendraite_gen, RDRP-scan, Lucaprot_HMM,Zayed_HMM, all |
-| `--custom-dbs` | | PATH | Path to directory containing custom MSAs/pHMM files to use as additional databases                                                                                             |
-| `--seq_type` | `-seq_type` | TEXT | Type of sequence to search against: (prot,nuc) Default: unknown                                                                                                                |
-| `--verbose` | `-v` | FLAG | Print verbose output.                                                                                                                                                          |
-| `--evalue` | `-e` | FLOAT | E-value threshold for HMMsearch. (default: 1e-5)                                                                                                                               |
-| `--incevalue` | `-incE` | FLOAT | Inclusion E-value threshold for HMMsearch. (default: 1e-5)                                                                                                                     |
-| `--domevalue` | `-domE` | FLOAT | Domain E-value threshold for HMMsearch. (default: 1e-5)                                                                                                                        |
-| `--incdomevalue` | `-incdomE` | FLOAT | Inclusion domain E-value threshold for HMMsearch. (default: 1e-5)                                                                                                              |
-| `--zvalue` | `-z` | INTEGER | Number of sequences to search against. (default: 1000000)                                                                                                                      |
-| `--cpus` | `-cpus` | INTEGER | Number of CPUs to use for HMMsearch. (default: 1)                                                                                                                              |
-| `--length_thr` | `-length_thr` | INTEGER | Minimum length threshold for seqkit seq. (default: 400)                                                                                                                        |
-| `--gen_code` | `-gen_code` | INTEGER | Genetic code to use for translation. (default: 1)                                                                                                                              |
-| `--bundle` | `-bundle` |  | Bundle the output files into a single archive. (default: False)                                                                                                                |
-| `--keep_tmp` | `-keep_tmp` |  | Keep the temporary files generated during the analysis. (default: False)                                                                                                       |
+| Argument         | Short Flag    | Type | Description                                                                                                                                                                                  |
+|------------------|---------------|------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--input`        | `-i`          | FILE | Path to the input FASTA file. [required]                                                                                                                                                     |
+| `--output`       | `-o`          | DIRECTORY | Path to the output directory. [required]                                                                                                                                                     |
+| `--db-dir`       | `-db-dir`     | PATH | Path to the directory containing RdRpCATCH databases. [required]                                                                                                                             |
+| `--db-options`   | `-dbs`        | TEXT | Comma-separated list of pre-installed databases to search against. Valid options: RVMT, NeoRdRp, NeoRdRp.2.1, TSA_Olendraite_fam, TSA_Olendraite_gen, RDRP-scan, Lucaprot_HMM,Zayed_HMM, all |
+| `--custom-dbs`   |               | PATH | Comma-separated list of custom databases to search against. Valid options: names of the directories that the custom databases are stored in.                                                 |
+| `--seq-type`     | `-seq-type`   | TEXT | Type of sequence to search against: (prot,nuc) Default: unknown                                                                                                                              |
+| `--verbose`      | `-v`          | FLAG | Print verbose output.                                                                                                                                                                        |
+| `--evalue`       | `-e`          | FLOAT | E-value threshold for HMMsearch. (default: 1e-5)                                                                                                                                             |
+| `--incevalue`    | `-incE`       | FLOAT | Inclusion E-value threshold for HMMsearch. (default: 1e-5)                                                                                                                                   |
+| `--domevalue`    | `-domE`       | FLOAT | Domain E-value threshold for HMMsearch. (default: 1e-5)                                                                                                                                      |
+| `--incdomevalue` | `-incdomE`    | FLOAT | Inclusion domain E-value threshold for HMMsearch. (default: 1e-5)                                                                                                                            |
+| `--zvalue`       | `-z`          | INTEGER | Number of sequences to search against. (default: 1000000)                                                                                                                                    |
+| `--cpus`         | `-cpus`       | INTEGER | Number of CPUs to use for HMMsearch. (default: 1)                                                                                                                                            |
+| `--length-thr`   | `-length-thr` | INTEGER | Minimum length threshold for seqkit seq. (default: 400)                                                                                                                                      |
+| `--gen-code`     | `-gen-code`   | INTEGER | Genetic code to use for translation. (default: 1)                                                                                                                                            |
+| `--bundle`       | `-bundle`     |  | Bundle the output files into a single archive. (default: False)                                                                                                                              |
+| `--keep-tmp`     | `-keep-tmp`   |  | Keep the temporary files generated during the analysis. (default: False)                                                                                                                     |
 
 
 
