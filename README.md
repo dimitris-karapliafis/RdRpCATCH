@@ -108,6 +108,12 @@ RdRpCATCH can be used as a CLI tool as follows:
 rdrpcatch scan -i path/to/input.fasta -o path/to/output_dir -db-dir path/to/database
 ```
 
+## Input description
+The input file can be one or more nucleotide or protein sequences in multi-fasta format. 
+The output directory is where the results will be stored. We recommend specifying the type of the sequence in the command line,
+An optional argument `--seq_type` (nuc or prot) can be used to specify if the input fasta file sequences are nucleotide or amino acid.
+
+
 ## Setting up custom pHMM databases
 It is possible to use custom pHMM databases with RdRpCATCH. As a prerequisite, you need to install the RdRpCATCH 
 databases using the `rdrpcatch databases` command as described above, to a directory of your choice.
@@ -142,10 +148,7 @@ rdrpcatch scan -i path/to/input.fasta -o path/to/output_dir -db_dir path/to/data
 - Note: By default, RdRpCATCH will search against all pre-compiled databases if no `--db_options` argument is specified. If you want to use only the custom databases, you can specify `--db_options none` to avoid searching against the pre-compiled databases.
 
 
-### input: 
-The input file can be one or more nucleotide or protein sequences in multi-fasta format. 
-The output directory is where the results will be stored. We recommend specifying the type of the sequence in the command line,
-An optional argument `--seq_type` (nuc or prot) can be used to specify if the input fasta file sequences are nucleotide or amino acid.
+
 
 ## Commands
 The following two commands are available in RdRpCATCH:  
