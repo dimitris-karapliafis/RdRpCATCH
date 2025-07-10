@@ -87,7 +87,7 @@ Activate the environment and download the RdRpCATCH databases:
 
 ```bash 
 conda activate rdrpcatch
-rdrpcatch databases --destination_dir path/to/store/databases
+rdrpcatch databases --destination-dir path/to/store/databases
 ```
 
 * Note 1: The databases are large files and may take some time to download (~ 3 GB).
