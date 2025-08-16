@@ -237,7 +237,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, custom_dbs,  seq_type, 
             elif db == "NeoRdRp".lower():
                 db_name_list.append("NeoRdRp")
                 db_path_list.append(neordrp_hmm_db)
-            elif db == "NeoRdRp.2.1":
+            elif db == "NeoRdRp.2.1".lower():
                 db_name_list.append("NeoRdRp.2.1".lower())
                 db_path_list.append(neordrp_2_hmm_db)
             elif db == "TSA_Olendraite_fam".lower():

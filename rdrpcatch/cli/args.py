@@ -76,7 +76,7 @@ def cli():
                    " TSA_Olendraite_fam, TSA_Olendraite_gen, RDRP-scan,Lucaprot_HMM, Zayed_HMM, all, none. ")
 @click.option("--custom-dbs",
               help="Path to directory containing custom MSAs/pHMM files to use as additional databases")
-@click.option("-seq_type", "--seq_type",
+@click.option("-seq-type", "--seq-type",
               type=click.STRING,
               default=None,
               help="Type of sequence to search against: (prot,nuc) Default: unknown")
@@ -107,11 +107,11 @@ def cli():
               type=click.INT,
               default=1,
               help="Number of CPUs to use for HMMsearch. (default: 1)")
-@click.option('-length_thr', '--length_thr',
+@click.option('-length-thr', '--length-thr',
               type=click.INT,
               default=400,
               help="Minimum length threshold for seqkit seq. (default: 400)")
-@click.option('-gen-code', '--gen_code',
+@click.option('-gen-code', '--gen-code',
               type=click.INT,
               default=1,
               help='Genetic code to use for translation. (default: 1) Possible genetic codes (supported by seqkit translate) : 1: The Standard Code, '
@@ -142,7 +142,7 @@ def cli():
               is_flag=True,
               default=False,
               help="Bundle the output files into a single archive. (default: False)")
-@click.option('-keep-tmp', '--keep_tmp',
+@click.option('-keep-tmp', '--keep-tmp',
               is_flag=True,
               default=False,
               help="Keep temporary files (Expert users) (default: False)")
