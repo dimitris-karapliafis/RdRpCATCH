@@ -93,10 +93,12 @@ rdrpcatch databases --destination-dir path/to/store/databases
 * Note 1: The databases are large files and may take some time to download (~ 3 GB).
 * Note 2: The databases are stored in the specified directory, and the path is required to run RdRpCATCH.
 * Note 3: If you encounter an SSL error while downloading, please try again. The error seems to appear sporadically during testing, and a simple re-initiation of the downloading process seems to fix it. 
-
-
-
-
+* Note 4: If the SSL error persists, or there is any other error related to downloading the databases, please let us know by raising an issue. In this case, you can download the pre-compiled databases manually via the zenodo repository  
+[10.5281/zenodo.15463729](https://doi.org/10.5281/zenodo.15463729) Save the repository to a local directory of your preferance, and then use the following command:
+```bash 
+tar -xvf rdrpcatch_dbs.tar
+```
+  
 ## Usage
 RdRpCATCH can be used as a CLI tool as follows:
 
