@@ -77,8 +77,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, custom_dbs,  seq_type, 
     :type domE: float
     :param incE: Inclusion E-value threshold for HMMsearch.
     :type incE: float
-    :param z: Number of sequences to search against.
-    :type z: int
+    :param z: Number of sequences to search against (or None to use HMMER default).
+    :type z: int | None
     :param cpus: Number of CPUs to use for HMMsearch.
     :type cpus: int
     :param length_thr: Minimum length threshold for seqkit seq.

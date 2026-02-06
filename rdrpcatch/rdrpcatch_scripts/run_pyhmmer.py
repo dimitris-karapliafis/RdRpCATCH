@@ -12,6 +12,7 @@ class pyhmmsearch:
         self.incdomE = incdomE
         self.domE = domE
         self.incE = incE
+        # z can be an int (explicit effective database size) or None to use HMMER defaults
         self.z = z
 
     def run_pyhmmsearch(self):
@@ -38,14 +39,22 @@ class pyhmmsearch:
                 raw_out.write("\t".join(title_line).encode("utf-8") + b"\n")
                 custom_out.write("\t".join(title_line).encode("utf-8") + b"\n")
 
-                for result in pyhmmer.hmmer.hmmsearch(hmms,
-                                                  db,
-                                                  cpus=self.cpus,
-                                                  E=self.e,
-                                                  incdomE=self.incdomE,
-                                                  domE=self.domE,
-                                                  incE=self.incE,
-                                                  Z=self.z):
+                hmmsearch_kwargs = {
+                    "cpus": self.cpus,
+                    "E": self.e,
+                    "incdomE": self.incdomE,
+                    "domE": self.domE,
+                    "incE": self.incE,
+                }
+                # Only pass Z if explicitly provided; otherwise let HMMER use its default
+                if self.z is not None:
+                    hmmsearch_kwargs["Z"] = self.z
+
+                for result in pyhmmer.hmmer.hmmsearch(
+                    hmms,
+                    db,
+                    **hmmsearch_kwargs,
+                ):
 
                     result.write(raw_out, format="domains", header=False)
                     if len(result) >= 1:

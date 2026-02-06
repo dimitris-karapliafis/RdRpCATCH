@@ -38,6 +38,99 @@ def parse_comma_separated_options(ctx, param, value):
     return lower_options
 
 
+def validate_scan_params(
+    input: Path,
+    output: Path,
+    db_options: list[str],
+    db_dir: Path,
+    custom_dbs: str | None,
+    seq_type: str | None,
+    evalue: float,
+    incevalue: float,
+    domevalue: float,
+    incdomevalue: float,
+    zvalue: int | None,
+    cpus: int,
+    length_thr: int,
+    gen_code: int,
+) -> None:
+    """
+    Validate CLI parameters before running the scan.
+
+    Raises click.BadParameter / click.UsageError if validation fails.
+    """
+
+    # Basic numeric sanity checks
+    for name, val in [
+        ("evalue", evalue),
+        ("incevalue", incevalue),
+        ("domevalue", domevalue),
+        ("incdomevalue", incdomevalue),
+    ]:
+        if val <= 0:
+            raise click.BadParameter(
+                f"{name} must be > 0, got {val}",
+                param_hint=f"--{name}",
+            )
+
+    if zvalue is not None:
+        if zvalue <= 0:
+            raise click.BadParameter(
+                f"zvalue must be > 0, got {zvalue}",
+                param_hint="--zvalue",
+            )
+
+    if cpus <= 0:
+        raise click.BadParameter(
+            f"cpus must be a positive integer, got {cpus}",
+            param_hint="--cpus",
+        )
+
+    if length_thr <= 0:
+        raise click.BadParameter(
+            f"length-thr must be a positive integer, got {length_thr}",
+            param_hint="--length-thr",
+        )
+
+    allowed_gen_codes = {
+        1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14,
+        16, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+    }
+    if gen_code not in allowed_gen_codes:
+        raise click.BadParameter(
+            f"Invalid genetic code {gen_code}. "
+            f"Allowed values: {', '.join(map(str, sorted(allowed_gen_codes)))}",
+            param_hint="--gen-code",
+        )
+
+    if db_options == ["none"] and not custom_dbs:
+        # This mirrors the check inside run_scan but fails early with a clearer message.
+        raise click.UsageError(
+            "You selected 'none' for supported databases but did not provide --custom-dbs.\n"
+            "Either choose at least one supported database via --db-options, "
+            "or supply a custom database (comma-separated names) with --custom-dbs."
+        )
+
+    # Optional validation of custom database names: if provided, ensure each one
+    # can be resolved by db_fetcher under the given db_dir/custom_dbs.
+    if custom_dbs:
+        fetcher = db_fetcher(db_dir)
+        for name in custom_dbs.split(","):
+            db_name = name.strip()
+            if not db_name:
+                continue
+            try:
+                # We only care that this does not raise; the actual path will be
+                # resolved again in run_scan.
+                fetcher.fetch_hmm_db_path(db_name)
+            except FileNotFoundError as e:
+                raise click.BadParameter(
+                    f"Custom database '{db_name}' not found under '{db_dir}'. "
+                    "Make sure it exists in the 'custom_dbs' subdirectory.",
+                    param_hint="--custom-dbs",
+                ) from e
+
+
 def format_size(bytes_size: int) -> str:
     """Convert bytes to human-readable format without external dependencies"""
     units = ["B", "KB", "MB", "GB", "TB"]
@@ -75,34 +168,40 @@ def cli():
               help="Comma-separated list of databases to search against. Valid options: RVMT, NeoRdRp, NeoRdRp.2.1,"
                    " TSA_Olendraite_fam, TSA_Olendraite_gen, RDRP-scan,Lucaprot_HMM, Zayed_HMM, all, none. ")
 @click.option("--custom-dbs",
-              help="Path to directory containing custom MSAs/pHMM files to use as additional databases")
+              help="Comma-separated custom database names (already prepared in custom_dbs dir under db-dir).")
 @click.option("-seq-type", "--seq-type",
-              type=click.STRING,
+              type=click.Choice(['prot', 'nuc'], case_sensitive=False),
               default=None,
-              help="Type of sequence to search against: (prot,nuc) Default: unknown")
+              help="Type of sequence to search against: (prot,nuc). If omitted, type will be auto-detected.")
 @click.option("-v", "--verbose",
               is_flag=True,
               help="Print verbose output.")
 @click.option('-e', '--evalue',
               type=click.FLOAT,
               default=1e-5,
-              help="E-value threshold for HMMsearch. (default: 1e-5)")
+              help="E-value threshold for HMMsearch. (default: 1e-5). Overridden by --default-hmmsearch-params.")
 @click.option('-incE', '--incevalue',
               type=click.FLOAT,
               default=1e-5,
-              help="Inclusion E-value threshold for HMMsearch. (default: 1e-5)")
+              help="Inclusion E-value threshold for HMMsearch. (default: 1e-5). Overridden by --default-hmmsearch-params.")
 @click.option('-domE', '--domevalue',
               type=click.FLOAT,
               default=1e-5,
-              help="Domain E-value threshold for HMMsearch. (default: 1e-5)")
+              help="Domain E-value threshold for HMMsearch. (default: 1e-5). Overridden by --default-hmmsearch-params.")
 @click.option('-incdomE', '--incdomevalue',
               type=click.FLOAT,
               default=1e-5,
-              help="Inclusion domain E-value threshold for HMMsearch. (default: 1e-5)")
+              help="Inclusion domain E-value threshold for HMMsearch. (default: 1e-5). Overridden by --default-hmmsearch-params.")
 @click.option('-z', '--zvalue',
               type=click.INT,
               default=1000000,
               help="Number of sequences to search against. (default: 1000000)")
+@click.option('--default-hmmsearch-params',
+              is_flag=True,
+              default=False,
+              help=("Use HMMER default hmmsearch thresholds "
+                    "(E=10.0, domE=10.0, incE=0.01, incdomE=0.01, automatic Z). "
+                    "Overrides --evalue/--incevalue/--domevalue/--incdomevalue and ignores --zvalue."))
 @click.option('-cpus', '--cpus',
               type=click.INT,
               default=1,
@@ -153,8 +252,41 @@ def cli():
 
 @click.pass_context
 def scan(ctx, input, output, db_options, db_dir, custom_dbs, seq_type, verbose, evalue,
-         incevalue, domevalue, incdomevalue, zvalue, cpus, length_thr, gen_code, bundle, keep_tmp, overwrite):
+         incevalue, domevalue, incdomevalue, zvalue, default_hmmsearch_params,
+         cpus, length_thr, gen_code, bundle, keep_tmp, overwrite):
     """Scan sequences for RdRps."""
+
+    # Compute effective hmmsearch parameters, optionally overriding with HMMER defaults
+    if default_hmmsearch_params:
+        eff_evalue = 10.0
+        eff_incevalue = 0.01
+        eff_domevalue = 10.0
+        eff_incdomevalue = 0.01
+        eff_zvalue: int | None = None  # Use automatic Z in pyhmmer/hmmer
+    else:
+        eff_evalue = evalue
+        eff_incevalue = incevalue
+        eff_domevalue = domevalue
+        eff_incdomevalue = incdomevalue
+        eff_zvalue = zvalue
+
+    # Validate arguments before running the scan, using effective parameters
+    validate_scan_params(
+        input=input,
+        output=output,
+        db_options=db_options,
+        db_dir=db_dir,
+        custom_dbs=custom_dbs,
+        seq_type=seq_type,
+        evalue=eff_evalue,
+        incevalue=eff_incevalue,
+        domevalue=eff_domevalue,
+        incdomevalue=eff_incdomevalue,
+        zvalue=eff_zvalue,
+        cpus=cpus,
+        length_thr=length_thr,
+        gen_code=gen_code,
+    )
 
     # Create a rich table for displaying parameters
     table = Table(title="Scan Parameters")
@@ -169,11 +301,12 @@ def scan(ctx, input, output, db_options, db_dir, custom_dbs, seq_type, verbose, 
         table.add_row("Custom Databases", str(custom_dbs))
     table.add_row("Sequence Type", seq_type or "unknown")
     table.add_row("Verbose Mode", "ON" if verbose else "OFF")
-    table.add_row("E-value", str(evalue))
-    table.add_row("Inclusion E-value", str(incevalue))
-    table.add_row("Domain E-value", str(domevalue))
-    table.add_row("Inclusion Domain E-value", str(incdomevalue))
-    table.add_row("Z-value", str(zvalue))
+    table.add_row("Default HMMER hmmsearch params", "ON" if default_hmmsearch_params else "OFF")
+    table.add_row("E-value", str(eff_evalue))
+    table.add_row("Inclusion E-value", str(eff_incevalue))
+    table.add_row("Domain E-value", str(eff_domevalue))
+    table.add_row("Inclusion Domain E-value", str(eff_incdomevalue))
+    table.add_row("Z-value", "auto" if eff_zvalue is None else str(eff_zvalue))
     table.add_row("CPUs", str(cpus))
     table.add_row("Length Threshold", str(length_thr))
     table.add_row("Genetic Code", str(gen_code))
@@ -192,11 +325,11 @@ def scan(ctx, input, output, db_options, db_dir, custom_dbs, seq_type, verbose, 
         custom_dbs=custom_dbs,
         seq_type=seq_type,
         verbose=verbose,
-        e=evalue,
-        incE=incevalue,
-        domE=domevalue,
-        incdomE=incdomevalue,
-        z=zvalue,
+        e=eff_evalue,
+        incE=eff_incevalue,
+        domE=eff_domevalue,
+        incdomE=eff_incdomevalue,
+        z=eff_zvalue,
         cpus=cpus,
         length_thr=length_thr,
         gen_code=gen_code,
