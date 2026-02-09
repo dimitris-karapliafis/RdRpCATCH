@@ -94,21 +94,21 @@ class Plotter:
         
         chart.save(os.path.join(self.upset_outdir, f"{self.prefix}_norm_bitscore_plot_profile.html"))
 
-    def plot_norm_bitscore_contig(self, combined_df):
+    def plot_norm_bitscore_sequence(self, combined_df):
         import altair as alt
         import os
         
         chart = alt.Chart(combined_df).mark_boxplot().encode(
             x=alt.X('db_name:N', title='Database'),
-            y=alt.Y('norm_bitscore_contig:Q', title='Normalized Bitscore (Contig)'),
+            y=alt.Y('norm_bitscore_sequence:Q', title='Normalized Bitscore (Sequence)'),
             color='db_name:N'
         ).properties(
-            title='Normalized Bitscore Distribution (Contig)',
+            title='Normalized Bitscore Distribution (Sequence)',
             width=600,
             height=400
         )
         
-        chart.save(os.path.join(self.upset_outdir, f"{self.prefix}_norm_bitscore_contig_plot.html"))
+        chart.save(os.path.join(self.upset_outdir, f"{self.prefix}_norm_bitscore_sequence_plot.html"))
 
     def plot_ID_score(self, combined_df):
         import altair as alt
@@ -142,21 +142,21 @@ class Plotter:
         
         chart.save(os.path.join(self.upset_outdir, f"{self.prefix}_profile_coverage_plot.html"))
 
-    def plot_contig_coverage(self, combined_df):
+    def plot_sequence_coverage(self, combined_df):
         import altair as alt
         import os
         
         chart = alt.Chart(combined_df).mark_boxplot().encode(
             x=alt.X('db_name:N', title='Database'),
-            y=alt.Y('contig_coverage:Q', title='Contig Coverage'),
+            y=alt.Y('sequence_coverage:Q', title='Sequence Coverage'),
             color='db_name:N'
         ).properties(
-            title='Contig Coverage Distribution',
+            title='Sequence Coverage Distribution',
             width=600,
             height=400
         )
         
-        chart.save(os.path.join(self.upset_outdir, f"{self.prefix}_contig_coverage_plot.html"))
+        chart.save(os.path.join(self.upset_outdir, f"{self.prefix}_sequence_coverage_plot.html"))
 
 
 

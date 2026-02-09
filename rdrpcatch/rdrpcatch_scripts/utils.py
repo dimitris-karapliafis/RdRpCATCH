@@ -18,9 +18,9 @@ def convert_record_to_gff3_record(row,seq_type): # for dict objects expected to 
     
     # try to identify a sequence_id columns (query, qseqid, contig_id, contig, id, name)
     if seq_type == 'nuc':
-        sequence_id_col = "Translated_contig_name (frame)"
+        sequence_id_col = "Translated_sequence_name (frame)"
     else:
-        sequence_id_columns = ["sequence_id",'query', 'qseqid', 'contig_id', 'contig', 'id', 'name','Contig_name']
+        sequence_id_columns = ["sequence_id",'query', 'qseqid', 'contig_id', 'contig', 'id', 'name','Sequence_name']
         sequence_id_col = next((col for col in sequence_id_columns if col in row.keys()), None)
         if sequence_id_col is None:
             raise ValueError(f"No sequence ID column found in row. Available columns: {list(row.keys())}")
@@ -208,42 +208,42 @@ class fasta:
         self.logger = logger
 
 
-    def extract_contigs(self, contig_list):
+    def extract_sequences(self, sequence_list):
         """
-        Extract contigs from a fasta file based on a list of contig names.
+        Extract sequences from a fasta file based on a list of sequence names.
 
-        :param contig_list: List of contig names to extract.
-        :type contig_list: list
-        :return: Dictionary with contig names as keys and sequences as values.
+        :param sequence_list: List of sequence names to extract.
+        :type sequence_list: list
+        :return: Dictionary with sequence names as keys and sequences as values.
         :rtype: dict
         """
-        contig_dict = {}
+        sequence_dict = {}
         reader = needletail.parse_fastx_file(self.fasta_file)
         for record in reader:
             # pyhmmer uses the first word of the header as the ID, so split on whitespace
-            if record.id.strip().split(" ")[0] in contig_list:
-                contig_dict[record.id] = record.seq
-        return contig_dict
+            if record.id.strip().split(" ")[0] in sequence_list:
+                sequence_dict[record.id] = record.seq
+        return sequence_dict
 
-    def write_fasta(self, contig_dict, outfile):
+    def write_fasta(self, sequence_dict, outfile):
         """
-        Write a dictionary of contigs to a fasta file.
+        Write a dictionary of sequences to a fasta file.
 
-        :param contig_dict: Dictionary with contig names as keys and sequences as values.
-        :type contig_dict: dict
+        :param sequence_dict: Dictionary with sequence names as keys and sequences as values.
+        :type sequence_dict: dict
         :param outfile: Path to the output file.
         :type outfile: str
         :return: None
         """
         with open(outfile, 'w') as out_handle:
-            for contig_name, seq in contig_dict.items():
-                out_handle.write(f">{contig_name}\n{seq}\n")
+            for sequence_name, seq in sequence_dict.items():
+                out_handle.write(f">{sequence_name}\n{seq}\n")
 
     def write_fasta_coords(self, rdrp_coords_list, outfile, seq_type):
         """
         Write a list of RdRp coordinates to a fasta file.
 
-        :param rdrp_coords_list: List of tuples containing contig name and RdRp coordinates.
+        :param rdrp_coords_list: List of tuples containing sequence name and RdRp coordinates.
         :type rdrp_coords_list: list
         :param outfile: Path to the output file.
         :type outfile: str
@@ -255,12 +255,12 @@ class fasta:
             self.logger.silent_log(f"Processing {len(rdrp_coords_list)} coordinates")
             self.logger.silent_log(f"First few coordinates: {rdrp_coords_list[:3]}")
 
-        contig_dict = {}
-        for contig_name, rdrp_from, rdrp_to in rdrp_coords_list:
-            contig_key = str(contig_name).strip()
-            if contig_key not in contig_dict:
-                contig_dict[contig_key] = []
-            contig_dict[contig_key].append((rdrp_from, rdrp_to))
+        sequence_dict = {}
+        for sequence_name, rdrp_from, rdrp_to in rdrp_coords_list:
+            sequence_key = str(sequence_name).strip()
+            if sequence_key not in sequence_dict:
+                sequence_dict[sequence_key] = []
+            sequence_dict[sequence_key].append((rdrp_from, rdrp_to))
 
         reader = needletail.parse_fastx_file(self.fasta_file)
         matches_found = 0
@@ -269,25 +269,25 @@ class fasta:
                 # Get the record ID
                 record_id = record.id.strip().split(" ")[0]
 
-                # Check if this record matches any of our target contigs
-                if record_id in contig_dict:
+                # Check if this record matches any of our target sequences
+                if record_id in sequence_dict:
                     if self.logger:
                         self.logger.silent_log(f"Match found for record ID: '{record_id}'")
 
-                    # Process all matching coordinates for this contig
-                    for rdrp_from, rdrp_to in contig_dict[record_id]:
+                    # Process all matching coordinates for this sequence
+                    for rdrp_from, rdrp_to in sequence_dict[record_id]:
                         seq = record.seq[rdrp_from - 1:rdrp_to]
                         fasta_header = f"{record_id}_RdRp_{rdrp_from}-{rdrp_to}"
                         out_handle.write(f">{fasta_header}\n{seq}\n")
                         matches_found += 1
 
-                    # Remove the processed contig to avoid future checks
-                    del contig_dict[record_id]
+                    # Remove the processed sequence to avoid future checks
+                    del sequence_dict[record_id]
 
-                    # If all contigs have been found, exit early
-                    if not contig_dict:
+                    # If all sequences have been found, exit early
+                    if not sequence_dict:
                         if self.logger:
-                            self.logger.silent_log("All contigs processed. Exiting early.")
+                            self.logger.silent_log("All sequences processed. Exiting early.")
                         break
 
         if self.logger:
@@ -309,35 +309,35 @@ class mmseqs_parser:
         """
         Parse the MMseqs2 taxonomy output file.
 
-        :return: Dictionary with contig names as keys and taxonomy lineages as values.
+        :return: Dictionary with sequence names as keys and taxonomy lineages as values.
         :rtype: dict
         """
         with open(self.mmseqs_tax_out_file, 'r') as f:
             lca_dict = {}
             for line in f:
                 line = line.strip().split('\t')
-                contig = line[0]
+                sequence = line[0]
                 if len(line) < 5:
                     lca_lineage = line[3]
                 else:
                     lca_lineage = line[4]
-                lca_dict[contig] = lca_lineage
+                lca_dict[sequence] = lca_lineage
         return lca_dict
 
     def parse_mmseqs_e_search_tophit(self):
         """
         Parse the MMseqs2 easy-search output file.
 
-        :return: Dictionary with contig names as keys and lists of hit information as values.
+        :return: Dictionary with sequence names as keys and lists of hit information as values.
         :rtype: dict
         """
         with open(self.mmseqs_s_out_file, 'r') as f:
             tophit_dict = {}
             for line in f:
                 line = line.strip().split('\t')
-                contig = line[0]
+                sequence = line[0]
 
-                if contig not in tophit_dict:
+                if sequence not in tophit_dict:
                     target = line[1]
                     fident = line[2]
                     alnlen = line[3]
@@ -345,7 +345,7 @@ class mmseqs_parser:
                     bits = line[11]
                     qcov = line[12]
                     lineage = line[14]
-                    tophit_dict[contig] = [target, fident, alnlen, eval, bits, qcov, lineage]
+                    tophit_dict[sequence] = [target, fident, alnlen, eval, bits, qcov, lineage]
                 else:
                     continue
 
@@ -369,12 +369,12 @@ class mmseqs_parser:
         df = pl.read_csv(rdrpcatch_out, separator='\t')
 
         # drop columns that are not needed
-        df = df.drop(["Best_hit_norm_bitscore_profile", "Best_hit_norm_bitscore_contig",
+        df = df.drop(["Best_hit_norm_bitscore_profile", "Best_hit_norm_bitscore_sequence",
                         "Best_hit_ID_score"])
         
         # Create new columns for taxonomy information
         # For translated sequences, use the frame-specific name
-        lookup_col = 'Translated_contig_name (frame)' if seq_type == 'nuc' else 'Contig_name'
+        lookup_col = 'Translated_sequence_name (frame)' if seq_type == 'nuc' else 'Sequence_name'
         
         df = df.with_columns([
             pl.Series(name='MMseqs_Taxonomy_2bLCA', values=[lca_dict.get(row[lookup_col], '') for row in df.iter_rows(named=True)]),

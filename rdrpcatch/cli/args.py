@@ -20,6 +20,42 @@ import requests
 
 console = Console()
 
+# Group options in rich-click help output for the scan command
+click.rich_click.OPTION_GROUPS = {
+    # Command path as seen by rich-click when running: python -m rdrpcatch.cli.args scan
+    "rdrpcatch.cli.args scan": [
+        {
+            "name": "Input & output options",
+            "options": ["--input", "--output", "--db-dir", "--seq-type", "--gen-code", "--length-thr"],
+        },
+        {
+            "name": "Database options",
+            "options": ["--db-options", "--custom-dbs", "--alt-mmseqs-tax-db"],
+        },
+        {
+            "name": "HMMsearch threshold options",
+            "options": [
+                "--evalue",
+                "--incevalue",
+                "--domevalue",
+                "--incdomevalue",
+                "--zvalue",
+                "--default-hmmsearch-params",
+            ],
+        },
+        {
+            "name": "Runtime & housekeeping options",
+            "options": [
+                "--cpus",
+                "--bundle",
+                "--keep-tmp",
+                "--overwrite",
+                "--verbose",
+            ],
+        },
+    ],
+}
+
 ## FUNCTIONS
 def parse_comma_separated_options(ctx, param, value):
     if not value:
@@ -28,14 +64,28 @@ def parse_comma_separated_options(ctx, param, value):
     allowed_choices = ['RVMT', 'NeoRdRp', 'NeoRdRp.2.1', 'TSA_Olendraite_fam', 'TSA_Olendraite_gen', 'RDRP-scan',
                        'Lucaprot_HMM', 'Zayed_HMM', 'all', 'none']
     lower_choices = [choice.lower() for choice in allowed_choices]
-    options = value.split(',')
-    lower_options = [option.lower() for option in options]
+    options = [opt.strip() for opt in value.split(',')]
 
+    # Allow shorthand aliases for some database names
+    alias_map = {
+        'olendraite_fam': 'TSA_Olendraite_fam',
+        'olendraite_gen': 'TSA_Olendraite_gen',
+    }
+
+    normalized_lower_options: list[str] = []
     for option in options:
-        if option.lower() not in lower_choices:
-            raise click.BadParameter(f"Invalid choice: '{option}' (choose from {', '.join(allowed_choices)})")
+        lower_opt = option.lower()
+        # Map aliases to their canonical names if used
+        if lower_opt in alias_map:
+            canonical = alias_map[lower_opt]
+            lower_opt = canonical.lower()
+        if lower_opt not in lower_choices:
+            raise click.BadParameter(
+                f"Invalid choice: '{option}' (choose from {', '.join(allowed_choices)})"
+            )
+        normalized_lower_options.append(lower_opt)
 
-    return lower_options
+    return normalized_lower_options
 
 
 def validate_scan_params(
@@ -162,11 +212,16 @@ def cli():
 @click.option("-db-dir", "--db-dir",
               help="Path to the directory containing RdRpCATCH databases.",
               type=click.Path(exists=True, dir_okay=True, readable=True, path_type=Path),required=True)
+@click.option("--alt-mmseqs-tax-db", "-altmmdb",
+              help=("Optional alternative MMseqs2 seqTaxDB-formatted MMseqs2 database to use. "
+                    "Can be a database name under 'mmseqs_dbs'"
+                    "or a path to a seqTaxDB-formatted MMseqs2 database (path/to/base/filename). "
+                    "If omitted, the default 'mmseqs_refseq_riboviria_20250211' is used. "))
 @click.option("-dbs", "--db-options",
               callback=parse_comma_separated_options,
               default="all",
               help="Comma-separated list of databases to search against. Valid options: RVMT, NeoRdRp, NeoRdRp.2.1,"
-                   " TSA_Olendraite_fam, TSA_Olendraite_gen, RDRP-scan,Lucaprot_HMM, Zayed_HMM, all, none. ")
+                   " Olendraite_fam, Olendraite_gen, RDRP-scan,Lucaprot_HMM, Zayed_HMM, all, none. ")
 @click.option("--custom-dbs",
               help="Comma-separated custom database names (already prepared in custom_dbs dir under db-dir).")
 @click.option("-seq-type", "--seq-type",
@@ -179,19 +234,19 @@ def cli():
 @click.option('-e', '--evalue',
               type=click.FLOAT,
               default=1e-5,
-              help="E-value threshold for HMMsearch. (default: 1e-5). Overridden by --default-hmmsearch-params.")
+              help="E-value threshold for HMMsearch. (default: 1e-5).")
 @click.option('-incE', '--incevalue',
               type=click.FLOAT,
               default=1e-5,
-              help="Inclusion E-value threshold for HMMsearch. (default: 1e-5). Overridden by --default-hmmsearch-params.")
+              help="Inclusion E-value threshold for HMMsearch. (default: 1e-5).")
 @click.option('-domE', '--domevalue',
               type=click.FLOAT,
               default=1e-5,
-              help="Domain E-value threshold for HMMsearch. (default: 1e-5). Overridden by --default-hmmsearch-params.")
+              help="Domain E-value threshold for HMMsearch. (default: 1e-5).")
 @click.option('-incdomE', '--incdomevalue',
               type=click.FLOAT,
               default=1e-5,
-              help="Inclusion domain E-value threshold for HMMsearch. (default: 1e-5). Overridden by --default-hmmsearch-params.")
+              help="Inclusion domain E-value threshold for HMMsearch. (default: 1e-5).")
 @click.option('-z', '--zvalue',
               type=click.INT,
               default=1000000,
@@ -209,7 +264,7 @@ def cli():
 @click.option('-length-thr', '--length-thr',
               type=click.INT,
               default=400,
-              help="Minimum length threshold for seqkit seq. (default: 400)")
+              help="Minimum length threshold for seqkit seq(default: 400). ONLY used for nucleotide sequences.")
 @click.option('-gen-code', '--gen-code',
               type=click.INT,
               default=1,
@@ -251,10 +306,30 @@ def cli():
               help="Force overwrite of existing output directory. (default: False)")
 
 @click.pass_context
-def scan(ctx, input, output, db_options, db_dir, custom_dbs, seq_type, verbose, evalue,
+def scan(ctx, input, output, db_options, db_dir, alt_mmseqs_tax_db, custom_dbs, seq_type, verbose, evalue,
          incevalue, domevalue, incdomevalue, zvalue, default_hmmsearch_params,
          cpus, length_thr, gen_code, bundle, keep_tmp, overwrite):
     """Scan sequences for RdRps."""
+
+    # Resolve MMseqs2 taxonomy database (name or path)
+    resolved_mmseqs_db = None
+    if alt_mmseqs_tax_db:
+        candidate = Path(alt_mmseqs_tax_db)
+        if candidate.exists():
+            # Path mode: directory or file; if file (e.g. X.lookup), strip suffix to get DB base path
+            if candidate.is_dir():
+                resolved_mmseqs_db = candidate
+            else:
+                resolved_mmseqs_db = candidate.with_suffix("")
+        else:
+            # Name mode: resolve via db_fetcher under mmseqs_dbs
+            try:
+                resolved_mmseqs_db = db_fetcher(db_dir).fetch_mmseqs_db_path(alt_mmseqs_tax_db)
+            except FileNotFoundError as e:
+                raise click.BadParameter(
+                    f"MMseqs2 database '{alt_mmseqs_tax_db}' not found as a path or named DB under '{db_dir}'.",
+                    param_hint="--alt-mmseqs-tax-db",
+                ) from e
 
     # Compute effective hmmsearch parameters, optionally overriding with HMMER defaults
     if default_hmmsearch_params:
@@ -288,31 +363,49 @@ def scan(ctx, input, output, db_options, db_dir, custom_dbs, seq_type, verbose, 
         gen_code=gen_code,
     )
 
-    # Create a rich table for displaying parameters
+    # Create a rich table for displaying parameters, grouped by category
     table = Table(title="Scan Parameters")
     table.add_column("Parameter", style="cyan")
     table.add_column("Value", style="green")
 
-    table.add_row("Input File", str(input))
-    table.add_row("Output Directory", str(output))
-    table.add_row("Supported databases", ", ".join(db_options))
-    table.add_row("Database Directory", str(db_dir))
+    # Input & output
+    table.add_row("[bold]Input & output[/bold]", "")
+    table.add_row("  Input File", str(input))
+    table.add_row("  Output Directory", str(output))
+    table.add_row("  Sequence Type", seq_type or "unknown")
+    table.add_row("")
+
+    # Databases
+    table.add_row("[bold]Databases[/bold]", "")
+    table.add_row("  Database Directory", str(db_dir))
+    table.add_row("  Supported databases", ", ".join(db_options))
     if custom_dbs:
-        table.add_row("Custom Databases", str(custom_dbs))
-    table.add_row("Sequence Type", seq_type or "unknown")
-    table.add_row("Verbose Mode", "ON" if verbose else "OFF")
-    table.add_row("Default HMMER hmmsearch params", "ON" if default_hmmsearch_params else "OFF")
-    table.add_row("E-value", str(eff_evalue))
-    table.add_row("Inclusion E-value", str(eff_incevalue))
-    table.add_row("Domain E-value", str(eff_domevalue))
-    table.add_row("Inclusion Domain E-value", str(eff_incdomevalue))
-    table.add_row("Z-value", "auto" if eff_zvalue is None else str(eff_zvalue))
-    table.add_row("CPUs", str(cpus))
-    table.add_row("Length Threshold", str(length_thr))
-    table.add_row("Genetic Code", str(gen_code))
-    table.add_row("Bundle Output", "ON" if bundle else "OFF")
-    table.add_row("Save Temporary Files", "ON" if keep_tmp else "OFF")
-    table.add_row("Force Overwrite", "ON" if overwrite else "OFF")
+        table.add_row("  Custom Databases", str(custom_dbs))
+    if resolved_mmseqs_db is None:
+        table.add_row("  MMseqs DB", "default (mmseqs_refseq_riboviria_20250211)")
+    else:
+        table.add_row("  MMseqs DB", str(resolved_mmseqs_db))
+    table.add_row("")
+
+    # HMMsearch thresholds
+    table.add_row("[bold]HMMsearch thresholds[/bold]", "")
+    table.add_row("  Default HMMER hmmsearch params", "ON" if default_hmmsearch_params else "OFF")
+    table.add_row("  E-value", str(eff_evalue))
+    table.add_row("  Inclusion E-value", str(eff_incevalue))
+    table.add_row("  Domain E-value", str(eff_domevalue))
+    table.add_row("  Inclusion Domain E-value", str(eff_incdomevalue))
+    table.add_row("  Z-value", "auto" if eff_zvalue is None else str(eff_zvalue))
+    table.add_row("")
+
+    # Runtime & housekeeping
+    table.add_row("[bold]Runtime & housekeeping[/bold]", "")
+    table.add_row("  CPUs", str(cpus))
+    table.add_row("  Length Threshold", str(length_thr))
+    table.add_row("  Genetic Code", str(gen_code))
+    table.add_row("  Bundle Output", "ON" if bundle else "OFF")
+    table.add_row("  Save Temporary Files", "ON" if keep_tmp else "OFF")
+    table.add_row("  Force Overwrite", "ON" if overwrite else "OFF")
+    table.add_row("  Verbose Mode", "ON" if verbose else "OFF")
 
     console.print(Panel(table, title="Scan Configuration"))
 
@@ -322,6 +415,7 @@ def scan(ctx, input, output, db_options, db_dir, custom_dbs, seq_type, verbose, 
         output_dir=output,
         db_options=db_options,
         db_dir=db_dir,
+        mmseqs_db_path=resolved_mmseqs_db,
         custom_dbs=custom_dbs,
         seq_type=seq_type,
         verbose=verbose,

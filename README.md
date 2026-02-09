@@ -12,6 +12,13 @@ library to perform pHMM searches.  In addition, the tool scans each sequence (aa
 In addition, RdRpCATCH provides information about the number of profiles
 that were positive for each sequence across all pHMM databases, and taxonomic information based on the MMseqs2 easy-taxonomy and search modules against a custom RefSeq Riboviria database.
 
+### Version 0.0.8 -> 1.0.0 Changelog
+- Added `--default-hmmsearch-params` to use HMMER default `hmmsearch` thresholds (E=10.0, domE=10.0, incE=0.01, incdomE=0.01, automatic Z) overriding any user-specified thresholds and ignoring `--zvalue`.
+- Added `--alt-mmseqs-tax-db` to optionally use an alternative MMseqs2 taxonomy database, either by name (under `mmseqs_dbs`) or by full path to a pressed MMseqs2 database.
+- Improved CLI validation for numeric parameters and genetic code values, with clearer error messages for invalid combinations (e.g. `--db-options none` without `--custom-dbs`).
+- Added shorthand aliases `Olendraite_fam` and `Olendraite_gen` in `--db-options` as equivalents to `TSA_Olendraite_fam` and `TSA_Olendraite_gen`.
+
+
 ### Version 0.0.7 -> 0.0.8 Changelog
 - Added support for custom pHMM databases. See the [Setting up custom pHMM databases](#setting-up-custom-phmm-databases) section for more information.
 - All specified flags use '-' instead of '_' (e.g. `--db-dir` instead of `--db_dir`). 
@@ -19,6 +26,8 @@ that were positive for each sequence across all pHMM databases, and taxonomic in
 - Command `rdrpcatch download` renamed as `rdrpcatch databases` for clarity, as it now supports adding custom pHMM
 databases to the RdRpCATCH databases. This is facilitated by the `--add-custom-db` argument.
 - Added none option to the `--db-options` argument to search only against custom databases.
+
+
 
 
 
@@ -171,25 +180,28 @@ Command to download pre-compiled databases from Zenodo and to set up custom data
 ### rdrpcatch scan:
 Search a given input using selected RdRp databases.  
 
-| Argument         | Short Flag    | Type | Description                                                                                                                                                                                  |
-|------------------|---------------|------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `--input`        | `-i`          | FILE | Path to the input FASTA file. [required]                                                                                                                                                     |
-| `--output`       | `-o`          | DIRECTORY | Path to the output directory. [required]                                                                                                                                                     |
-| `--db-dir`       | `-db-dir`     | PATH | Path to the directory containing RdRpCATCH databases. [required]                                                                                                                             |
-| `--db-options`   | `-dbs`        | TEXT | Comma-separated list of pre-installed databases to search against. Valid options: RVMT, NeoRdRp, NeoRdRp.2.1, TSA_Olendraite_fam, TSA_Olendraite_gen, RDRP-scan, Lucaprot_HMM,Zayed_HMM, all |
-| `--custom-dbs`   |               | PATH | Comma-separated list of custom databases to search against. Valid options: names of the directories that the custom databases are stored in.                                                 |
-| `--seq-type`     | `-seq-type`   | TEXT | Type of sequence to search against: (prot,nuc) Default: unknown                                                                                                                              |
-| `--verbose`      | `-v`          | FLAG | Print verbose output.                                                                                                                                                                        |
-| `--evalue`       | `-e`          | FLOAT | E-value threshold for HMMsearch. (default: 1e-5)                                                                                                                                             |
-| `--incevalue`    | `-incE`       | FLOAT | Inclusion E-value threshold for HMMsearch. (default: 1e-5)                                                                                                                                   |
-| `--domevalue`    | `-domE`       | FLOAT | Domain E-value threshold for HMMsearch. (default: 1e-5)                                                                                                                                      |
-| `--incdomevalue` | `-incdomE`    | FLOAT | Inclusion domain E-value threshold for HMMsearch. (default: 1e-5)                                                                                                                            |
-| `--zvalue`       | `-z`          | INTEGER | Number of sequences to search against. (default: 1000000)                                                                                                                                    |
-| `--cpus`         | `-cpus`       | INTEGER | Number of CPUs to use for HMMsearch. (default: 1)                                                                                                                                            |
-| `--length-thr`   | `-length-thr` | INTEGER | Minimum length threshold for seqkit seq. (default: 400)                                                                                                                                      |
-| `--gen-code`     | `-gen-code`   | INTEGER | Genetic code to use for translation. (default: 1)                                                                                                                                            |
-| `--bundle`       | `-bundle`     |  | Bundle the output files into a single archive. (default: False)                                                                                                                              |
-| `--keep-tmp`     | `-keep-tmp`   |  | Keep the temporary files generated during the analysis. (default: False)                                                                                                                     |
+| Argument                | Short Flag    | Type    | Description                                                                                                                                                                                                                      |
+|-------------------------|---------------|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--input`               | `-i`          | FILE    | Path to the input FASTA file. [required]                                                                                                                                                                                         |
+| `--output`              | `-o`          | DIRECTORY | Path to the output directory. [required]                                                                                                                                                                                         |
+| `--db-dir`              | `-db-dir`     | PATH    | Path to the directory containing RdRpCATCH databases. [required]                                                                                                                                                                 |
+| `--seq-type`            | `-seq-type`   | TEXT    | Type of sequence to search against: (prot,nuc). If omitted, the type will be auto-detected.                                                                                                                                      |
+| `--gen-code`            | `-gen-code`   | INTEGER | Genetic code to use for translation. (default: 1). Only a subset of NCBI genetic codes supported by `seqkit translate` is accepted (see CLI help for the list).                                                                 |
+| `--length-thr`          | `-length-thr` | INTEGER | Minimum length threshold for seqkit seq. (default: 400)                                                                                                                                                                          |
+| `--db-options`          | `-dbs`        | TEXT    | Comma-separated list of pre-installed databases to search against. Valid options: RVMT, NeoRdRp, NeoRdRp.2.1, TSA_Olendraite_fam (or Olendraite_fam), TSA_Olendraite_gen (or Olendraite_gen), RDRP-scan, Lucaprot_HMM, Zayed_HMM, all, none.      |
+| `--custom-dbs`          |               | PATH    | Comma-separated list of custom databases to search against. Valid options: names of the directories that the custom databases are stored in.                                                                                     |
+| `--alt-mmseqs-tax-db`   | `-altmmdb`    | TEXT    | Optional alternative MMseqs2 taxonomy database. Can be a database name under `mmseqs_dbs` (resolved via `fetch_mmseqs_db_path`) or a path to a pressed MMseqs2 DB (directory or base filename). Defaults to `mmseqs_refseq_riboviria_20250211`. |
+| `--evalue`              | `-e`          | FLOAT   | E-value threshold for HMMsearch. (default: 1e-5). Overridden when `--default-hmmsearch-params` is used.                                                                                                                          |
+| `--incevalue`           | `-incE`       | FLOAT   | Inclusion E-value threshold for HMMsearch. (default: 1e-5). Overridden when `--default-hmmsearch-params` is used.                                                                                                                |
+| `--domevalue`           | `-domE`       | FLOAT   | Domain E-value threshold for HMMsearch. (default: 1e-5). Overridden when `--default-hmmsearch-params` is used.                                                                                                                   |
+| `--incdomevalue`        | `-incdomE`    | FLOAT   | Inclusion domain E-value threshold for HMMsearch. (default: 1e-5). Overridden when `--default-hmmsearch-params` is used.                                                                                                         |
+| `--zvalue`              | `-z`          | INTEGER | Number of sequences to search against. (default: 1000000). Ignored when `--default-hmmsearch-params` is used (automatic Z).                                                                                                      |
+| `--default-hmmsearch-params` |           | FLAG    | Use HMMER default `hmmsearch` thresholds (E=10.0, domE=10.0, incE=0.01, incdomE=0.01, automatic Z), overriding `--evalue/--incevalue/--domevalue/--incdomevalue` and ignoring `--zvalue`.                                        |
+| `--cpus`                | `-cpus`       | INTEGER | Number of CPUs to use for HMMsearch. (default: 1)                                                                                                                                                                                |
+| `--bundle`              | `-bundle`     |         | Bundle the output files into a single archive. (default: False)                                                                                                                                                                  |
+| `--keep-tmp`            | `-keep-tmp`   |         | Keep the temporary files generated during the analysis. (default: False)                                                                                                                                                         |
+| `--overwrite`           | `-overwrite`  | FLAG    | Force overwrite of existing output directory. (default: False)                                                                                                                                                                   |
+| `--verbose`             | `-v`          | FLAG    | Print verbose output.                                                                                                                                                                                                            |
 
 
 
@@ -208,10 +220,10 @@ rdrpcatch scan will create a folder with the following structure:
 A summary of the results is stored in the `{prefix}_rdrpcatch_output_annotated.tsv` file, which contains the following fields:
 | Field | Description                                                                                                         |
 |-------|---------------------------------------------------------------------------------------------------------------------|
-| `Contig_name` | The name of the contig.                                                                                             |
-| `Translated_contig_name (frame)` | The name of the translated contig and the frame of the RdRp sequence.                                               |
+| `Sequence_name` | The name of the sequence.                                                                                             |
+| `Translated_sequence_name (frame)` | The name of the translated sequence and the frame of the RdRp sequence.                                               |
 | `Sequence_length(AA)` | The length of the RdRp sequence in amino acids.                                                                     |
-| `Total_databases_that_the_contig_was_detected(No_of_Profiles)` | The name of databases and the number of profiles that the RdRp sequence was detected by.                            |
+| `Total_databases_that_the_sequence_was_detected(No_of_Profiles)` | The name of databases and the number of profiles that the RdRp sequence was detected by.                            |
 | `Best_hit_Database` | The database with the best hit.                                                                                     |
 | `Best_hit_profile_name` | The name of the profile with the best hit.                                                                          |
 | `Best_hit_profile_length` | The length of the profile with the best hit.                                                                        |
@@ -220,7 +232,7 @@ A summary of the results is stored in the `{prefix}_rdrpcatch_output_annotated.t
 | `RdRp_from(AA)` | The start position of the RdRp sequence, in relation to the amino acid sequence.                                    |
 | `RdRp_to(AA)` | The end position of the RdRp sequence, in relation to the amino acid sequence.                                      |
 | `Best_hit_profile_coverage` | The fraction of the profile that was covered by the RdRp sequence.                                                  |
-| `Best_hit_contig_coverage` | The fraction of the contig that was covered by the RdRp sequence. (Based on aminoacid sequence)                     |
+| `Best_hit_sequence_coverage` | The fraction of the sequence that was covered by the RdRp sequence. (Based on aminoacid sequence)                     |
 | `MMseqs_Taxonomy_2bLCA` | The taxonomy of the RdRp sequence based on MMseqs2 easy-taxonomy module against a custom RefSeq Riboviria database. |
 | `MMseqs_TopHit_accession` | The accession of the top hit in the RefSeq Riboviria database.                                                      |
 | `MMseqs_TopHit_fident` | The fraction of identical matches of the top hit in the RefSeq Riboviria database.                                  |

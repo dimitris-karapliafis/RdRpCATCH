@@ -53,7 +53,7 @@ def bundle_results(output_dir, prefix):
     
     return archive_path
 
-def run_scan(input_file, output_dir, db_options, db_dir, custom_dbs,  seq_type, verbose, e,incdomE,domE,incE,z, cpus, length_thr, gen_code, bundle, keep_tmp, overwrite):
+def run_scan(input_file, output_dir, db_options, db_dir, mmseqs_db_path, custom_dbs,  seq_type, verbose, e,incdomE,domE,incE,z, cpus, length_thr, gen_code, bundle, keep_tmp, overwrite):
     """
     Run RdRpCATCH scan.
 
@@ -65,6 +65,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, custom_dbs,  seq_type, 
     :type db_options: list
     :param db_dir: Path to the directory containing RdRpCATCH databases.
     :type db_dir: str
+    :param mmseqs_db_path: Optional path to MMseqs2 taxonomy database (if None, use default).
+    :type mmseqs_db_path: str | None
     :param seq_type: Type of sequence (prot or nuc).
     :type seq_type: str
     :param verbose: Whether to print verbose output.
@@ -219,7 +221,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, custom_dbs,  seq_type, 
 
     ## Set up HMM databases
     if db_options == ['all']:
-        db_name_list = ["RVMT", "NeoRdRp", "NeoRdRp.2.1", "TSA_Olendraite_fam","TSA_Olendraite_gen", "RDRP-scan", "Lucaprot_HMM", "Zayed_HMM"]
+        db_name_list = ["RVMT", "NeoRdRp", "NeoRdRp.2.1", "Olendraite_fam","Olendraite_gen", "RDRP-scan", "Lucaprot_HMM", "Zayed_HMM"]
         db_path_list = [rvmt_hmm_db, neordrp_hmm_db, neordrp_2_hmm_db, tsa_olen_fam_hmm_db,tsa_olen_gen_hmm_db, rdrpscan_hmm_db, lucaprot_hmm_db, zayed_hmm_db]
     elif db_options == ['none'] and not custom_dbs:
         raise Exception("No databases selected. Please select at least one database or provide custom databases.")
@@ -241,10 +243,10 @@ def run_scan(input_file, output_dir, db_options, db_dir, custom_dbs,  seq_type, 
                 db_name_list.append("NeoRdRp.2.1".lower())
                 db_path_list.append(neordrp_2_hmm_db)
             elif db == "TSA_Olendraite_fam".lower():
-                db_name_list.append("TSA_Olendraite_fam")
+                db_name_list.append("Olendraite_fam")
                 db_path_list.append(tsa_olen_fam_hmm_db)
             elif db == "TSA_Olendraite_gen".lower():
-                db_name_list.append("TSA_Olendraite_gen")
+                db_name_list.append("Olendraite_gen")
                 db_path_list.append(tsa_olen_gen_hmm_db)
             elif db == "RDRP-scan".lower():
                 db_name_list.append("RDRP-scan")
@@ -284,15 +286,19 @@ def run_scan(input_file, output_dir, db_options, db_dir, custom_dbs,  seq_type, 
                 logger.silent_log(f"Custom database {custom_db} fetched from: {custom_db_path}")
 
 
-    # Fetch mmseqs database
-    logger.loud_log("Fetching Mmseqs2 databases...")
-
-    mmseqs_db_path = fetch_dbs.db_fetcher(db_dir).fetch_mmseqs_db_path("mmseqs_refseq_riboviria_20250211")
-
-    if verbose:
-        logger.loud_log(f"mmseqs database fetched from: {mmseqs_db_path}")
+    # Fetch or use provided mmseqs database
+    if mmseqs_db_path is None:
+        logger.loud_log("Fetching default Mmseqs2 taxonomy database...")
+        mmseqs_db_path = fetch_dbs.db_fetcher(db_dir).fetch_mmseqs_db_path("mmseqs_refseq_riboviria_20250211")
+        if verbose:
+            logger.loud_log(f"Default mmseqs database fetched from: {mmseqs_db_path}")
+        else:
+            logger.silent_log(f"Default mmseqs database fetched from: {mmseqs_db_path}")
     else:
-        logger.silent_log(f"mmseqs database fetched from: {mmseqs_db_path}")
+        if verbose:
+            logger.loud_log(f"Using user-specified mmseqs database: {mmseqs_db_path}")
+        else:
+            logger.silent_log(f"Using user-specified mmseqs database: {mmseqs_db_path}")
 
     if not os.path.exists(outputs.hmm_output_dir):
         outputs.hmm_output_dir.mkdir(parents=True)
@@ -385,9 +391,9 @@ def run_scan(input_file, output_dir, db_options, db_dir, custom_dbs,  seq_type, 
                 logger.silent_log(f"Highest Bitscore hits written to: {outputs.best_hit_path(db_name)}")
 
             set_dict[db_name] = format_pyhmmer_out.hmmsearch_format_helpers(outputs.formatted_hmm_output_path(db_name),
-                                                                            seq_type, logger).hmm_to_contig_set()
+                                                                            seq_type, logger).hmm_to_sequence_set()
             translated_set_dict[db_name] = format_pyhmmer_out.hmmsearch_format_helpers(outputs.formatted_hmm_output_path(db_name),
-                                                                                       'prot', logger).hmm_to_contig_set()
+                                                                                       'prot', logger).hmm_to_sequence_set()
 
             # Convert to dataframe, add db_name column and append to df_list
             df = pl.read_csv(outputs.best_hit_path(db_name), separator='\t')
@@ -411,8 +417,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, custom_dbs,  seq_type, 
         # Combine all the dataframes in the list
         combined_df = pl.concat(df_list, how='vertical_relaxed')
         # Write the combined dataframe to a tsv file
-        for col in ['E-value', 'score', 'norm_bitscore_profile', 'norm_bitscore_contig',
-                    'ID_score', 'profile_coverage', 'contig_coverage']:
+        for col in ['E-value', 'score', 'norm_bitscore_profile', 'norm_bitscore_sequence',
+                    'ID_score', 'profile_coverage', 'sequence_coverage']:
             combined_df = combined_df.with_columns([
                 pl.col(col).cast(pl.Float64)
             ])
@@ -448,27 +454,27 @@ def run_scan(input_file, output_dir, db_options, db_dir, custom_dbs,  seq_type, 
         plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_score(combined_df)
         # Generate normalized bitscore plot
         plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_norm_bitscore_profile(combined_df)
-        # Generate normalized bitscore contig plot
-        plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_norm_bitscore_contig(combined_df)
+        # Generate normalized bitscore sequence plot
+        plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_norm_bitscore_sequence(combined_df)
         # Generate ID score plot
         plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_ID_score(combined_df)
         # Generate Profile coverage plot
         plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_profile_coverage(combined_df)
-        # Generate contig coverage plot
-        plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_contig_coverage(combined_df)
-        # Extract all the contigs
+        # Generate sequence coverage plot
+        plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_sequence_coverage(combined_df)
+        # Extract all the sequences
         combined_set = set.union(*[value for value in set_dict.values()])
         translated_combined_set = set.union(*[value for value in translated_set_dict.values()])
 
-        logger.loud_log("Extracting RdRp contigs from the input file.")
+        logger.loud_log("Extracting RdRp sequences from the input file.")
 
-        # Write a fasta file with all the contigs
+        # Write a fasta file with all the sequences
         if not os.path.exists(outputs.fasta_output_dir):
             outputs.fasta_output_dir.mkdir(parents=True)
 
-        utils.fasta(input_file).write_fasta(utils.fasta(input_file).extract_contigs(combined_set), outputs.fasta_nuc_out_path)
+        utils.fasta(input_file).write_fasta(utils.fasta(input_file).extract_sequences(combined_set), outputs.fasta_nuc_out_path)
 
-        utils.fasta(outputs.seqkit_translate_output_path).write_fasta(utils.fasta(outputs.seqkit_translate_output_path).extract_contigs(translated_combined_set),
+        utils.fasta(outputs.seqkit_translate_output_path).write_fasta(utils.fasta(outputs.seqkit_translate_output_path).extract_sequences(translated_combined_set),
                                             outputs.fasta_prot_out_path)
 
         if not os.path.exists(outputs.gff_output_dir):
@@ -479,13 +485,13 @@ def run_scan(input_file, output_dir, db_options, db_dir, custom_dbs,  seq_type, 
         utils.fasta(outputs.seqkit_translate_output_path, logger).write_fasta_coords(rdrp_coords_list,outputs.fasta_trimmed_out_path, seq_type)
 
         if verbose:
-            logger.loud_log(f"Contigs written to: {outputs.fasta_nuc_out_path}")
-            logger.loud_log(f"Translated contigs written to: {outputs.fasta_prot_out_path}")
-            logger.loud_log(f"Trimmed contigs written to: {outputs.fasta_trimmed_out_path}")
+            logger.loud_log(f"Sequences written to: {outputs.fasta_nuc_out_path}")
+            logger.loud_log(f"Translated sequences written to: {outputs.fasta_prot_out_path}")
+            logger.loud_log(f"Trimmed sequences written to: {outputs.fasta_trimmed_out_path}")
         else:
-            logger.silent_log(f"Contigs written to: {outputs.fasta_nuc_out_path}")
-            logger.silent_log(f"Translated contigs written to: {outputs.fasta_prot_out_path}")
-            logger.silent_log(f"Trimmed contigs written to: {outputs.fasta_trimmed_out_path}")
+            logger.silent_log(f"Sequences written to: {outputs.fasta_nuc_out_path}")
+            logger.silent_log(f"Translated sequences written to: {outputs.fasta_prot_out_path}")
+            logger.silent_log(f"Trimmed sequences written to: {outputs.fasta_trimmed_out_path}")
 
         if not os.path.exists(outputs.mmseqs_tax_output_dir):
             outputs.mmseqs_tax_output_dir.mkdir(parents=True)
@@ -555,8 +561,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, custom_dbs,  seq_type, 
                 logger.loud_log(f"Highest Bitscore hits written to: {outputs.best_hit_path(db_name)}")
             else:
                 logger.silent_log(f"Highest Bitscore hits written to: {outputs.best_hit_path(db_name)}")
-            # Here I overwrite prot to nuc, because I need the contig name to extract the contigs
-            set_dict[db_name] = format_pyhmmer_out.hmmsearch_format_helpers(outputs.formatted_hmm_output_path(db_name),"nuc", logger).hmm_to_contig_set()
+            # Here I overwrite prot to nuc, because I need the sequence name to extract the sequences
+            set_dict[db_name] = format_pyhmmer_out.hmmsearch_format_helpers(outputs.formatted_hmm_output_path(db_name),"nuc", logger).hmm_to_sequence_set()
 
             # Convert to  dataframe, add db_name column and append to df_list
             df = pl.read_csv(outputs.best_hit_path(db_name), separator='\t')
@@ -580,8 +586,8 @@ def run_scan(input_file, output_dir, db_options, db_dir, custom_dbs,  seq_type, 
         # Combine all the dataframes in the list
         combined_df = pl.concat(df_list, how='vertical_relaxed')
         # Write the combined dataframe to a tsv file
-        for col in ['E-value', 'score', 'norm_bitscore_profile', 'norm_bitscore_contig',
-                    'ID_score', 'profile_coverage', 'contig_coverage']:
+        for col in ['E-value', 'score', 'norm_bitscore_profile', 'norm_bitscore_sequence',
+                    'ID_score', 'profile_coverage', 'sequence_coverage']:
             combined_df = combined_df.with_columns([
                 pl.col(col).cast(pl.Float64)
             ])
@@ -617,30 +623,30 @@ def run_scan(input_file, output_dir, db_options, db_dir, custom_dbs,  seq_type, 
         plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_score(combined_df)
         # Generate normalized bitscore plot
         plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_norm_bitscore_profile(combined_df)
-        # Generate normalized bitscore contig plot
-        plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_norm_bitscore_contig(combined_df)
+        # Generate normalized bitscore sequence plot
+        plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_norm_bitscore_sequence(combined_df)
         # Generate ID score plot
         plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_ID_score(combined_df)
         # Generate Profile coverage plot
         plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_profile_coverage(combined_df)
-        # Generate contig coverage plot
-        plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_contig_coverage(combined_df)
+        # Generate sequence coverage plot
+        plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_sequence_coverage(combined_df)
 
-        # Extract all the contigs
+        # Extract all the sequences
         combined_set = set.union(*[value for value in set_dict.values()])
-        # Write a fasta file with all the contigs
+        # Write a fasta file with all the sequences
 
-        logger.loud_log("Extracting RdRp contigs from the input file.")
+        logger.loud_log("Extracting RdRp sequences from the input file.")
 
         if not os.path.exists(outputs.fasta_output_dir):
             outputs.fasta_output_dir.mkdir(parents=True)
 
-        utils.fasta(input_file).write_fasta(utils.fasta(input_file).extract_contigs(combined_set), outputs.fasta_prot_out_path)
+        utils.fasta(input_file).write_fasta(utils.fasta(input_file).extract_sequences(combined_set), outputs.fasta_prot_out_path)
 
         if verbose:
-            logger.loud_log(f"Full aminoacid contigs written to: {outputs.fasta_prot_out_path}")
+            logger.loud_log(f"Full aminoacid sequences written to: {outputs.fasta_prot_out_path}")
         else:
-            logger.silent_log(f" Full aminoacid contigs written to: {outputs.fasta_prot_out_path}")
+            logger.silent_log(f" Full aminoacid sequences written to: {outputs.fasta_prot_out_path}")
 
         if not os.path.exists(outputs.gff_output_dir):
             outputs.gff_output_dir.mkdir(parents=True)
@@ -651,9 +657,9 @@ def run_scan(input_file, output_dir, db_options, db_dir, custom_dbs,  seq_type, 
         utils.fasta(input_file, logger).write_fasta_coords(rdrp_coords_list,outputs.fasta_trimmed_out_path, seq_type)
 
         if verbose:
-            logger.loud_log(f"Trimmed contigs written to: {outputs.fasta_trimmed_out_path}")
+            logger.loud_log(f"Trimmed sequences written to: {outputs.fasta_trimmed_out_path}")
         else:
-            logger.silent_log(f"Trimmed contigs written to: {outputs.fasta_trimmed_out_path}")
+            logger.silent_log(f"Trimmed sequences written to: {outputs.fasta_trimmed_out_path}")
 
         if not os.path.exists(outputs.mmseqs_tax_output_dir):
             outputs.mmseqs_tax_output_dir.mkdir(parents=True)
