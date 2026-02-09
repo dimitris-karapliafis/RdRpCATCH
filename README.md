@@ -12,6 +12,9 @@ library to perform pHMM searches.  In addition, the tool scans each sequence (aa
 In addition, RdRpCATCH provides information about the number of profiles
 that were positive for each sequence across all pHMM databases, and taxonomic information based on the MMseqs2 easy-taxonomy and search modules against a custom RefSeq Riboviria database.
 
+Our web server is live! https://rdrpcatch.bioinformatics.nl
+
+
 ### Version 0.0.8 -> 1.0.0 Changelog
 - Added `--default-hmmsearch-params` to use HMMER default `hmmsearch` thresholds (E=10.0, domE=10.0, incE=0.01, incdomE=0.01, automatic Z) overriding any user-specified thresholds and ignoring `--zvalue`.
 - Added `--alt-mmseqs-tax-db` to optionally use an alternative MMseqs2 taxonomy database, either by name (under `mmseqs_dbs`) or by full path to a pressed MMseqs2 database.
