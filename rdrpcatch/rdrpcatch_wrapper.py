@@ -53,7 +53,7 @@ def bundle_results(output_dir, prefix):
     
     return archive_path
 
-def run_scan(input_file, output_dir, db_options, db_dir, mmseqs_db_path, custom_dbs,  seq_type, verbose, e,incdomE,domE,incE,z, cpus, length_thr, gen_code, bundle, keep_tmp, overwrite):
+def run_scan(input_file, output_dir, db_options, db_dir, mmseqs_db_path, custom_dbs,  seq_type, verbose, e,incdomE,domE,incE,z, cpus, length_thr, gen_code, bundle, keep_tmp, overwrite, extended_output=False):
     """
     Run RdRpCATCH scan.
 
@@ -511,7 +511,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, mmseqs_db_path, custom_
                           outputs.mmseqs_e_search_output_path, 7, cpus, outputs.mmseqs_e_search_log_path).run_mmseqs_e_search()
 
         utils.mmseqs_parser(outputs.mmseqs_tax_output_lca_path, outputs.mmseqs_e_search_output_path).tax_to_rdrpcatch(
-            outputs.rdrpcatch_output_tsv, outputs.extended_rdrpcatch_output, seq_type)
+            outputs.rdrpcatch_output_tsv, outputs.extended_rdrpcatch_output, seq_type, extended_output=extended_output)
 
         logger.loud_log("Taxonomic annotation completed.")
 
@@ -678,7 +678,7 @@ def run_scan(input_file, output_dir, db_options, db_dir, mmseqs_db_path, custom_
                           outputs.mmseqs_e_search_output_path, 7, cpus, outputs.mmseqs_e_search_log_path).run_mmseqs_e_search()
 
         utils.mmseqs_parser(outputs.mmseqs_tax_output_lca_path, outputs.mmseqs_e_search_output_path).tax_to_rdrpcatch(
-            outputs.rdrpcatch_output_tsv, outputs.extended_rdrpcatch_output, seq_type)
+            outputs.rdrpcatch_output_tsv, outputs.extended_rdrpcatch_output, seq_type, extended_output=extended_output)
 
 
 

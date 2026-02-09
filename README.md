@@ -35,7 +35,7 @@ databases to the RdRpCATCH databases. This is facilitated by the `--add-custom-d
 
 
 
-![rdrpcatch_flowchart_v0.png](images%2Frdrpcatch_illustration.png)
+![images\rdrpcatch_illustration.png](images%2Frdrpcatch_illustration.png)
 
 ### Supported databases
 - NeoRdRp <sup>1</sup> : 1182 pHMMs 
@@ -83,7 +83,7 @@ The dependencies can be installed using conda or mamba. Follow these steps:
 
 Create a new conda environment and install the dependencies:
 ```bash
-conda env create -n rdrpcatch python=3.12
+conda create -n rdrpcatch python=3.12
 conda activate rdrpcatch
 conda install -c bioconda mmseqs2==17.b804f seqkit==2.10.0
 ```
@@ -202,6 +202,7 @@ Search a given input using selected RdRp databases.
 | `--keep-tmp`            | `-keep-tmp`   |         | Keep the temporary files generated during the analysis. (default: False)                                                                                                                                                         |
 | `--overwrite`           | `-overwrite`  | FLAG    | Force overwrite of existing output directory. (default: False)                                                                                                                                                                   |
 | `--verbose`             | `-v`          | FLAG    | Print verbose output.                                                                                                                                                                                                            |
+| `--extended-output`     |               | FLAG    | Keep additional HMM score columns (`Best_hit_norm_bitscore_profile`, `Best_hit_norm_bitscore_sequence`, `Best_hit_ID_score`) in the output. (default: False)                                                                     |
 
 
 
@@ -253,13 +254,10 @@ RdRpCATCH is a collaborative effort and we would like to thank all the authors a
 ## Contact
 Dimitris Karapliafis (dimitris.karapliafis@wur.nl), potentially via slack/teams or an issue in the main repo.
 
-##TODO:
-- [ ] loud logging is linking to the utils.py file, not the actual line of code causing the error.
-- [ ] drop `db_dir` argument and use global/environment/config variable that is set after running the `download` command
-
 
 ## Contributing
-TBD up to Dimitris and Anne
+
+We welcome pull requests and suggestions via raising issues, emails or Slack
 
 ## Licence
 [MIT](LICENSE)

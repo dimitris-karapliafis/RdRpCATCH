@@ -351,7 +351,7 @@ class mmseqs_parser:
 
         return tophit_dict
 
-    def tax_to_rdrpcatch(self, rdrpcatch_out, extended_rdrpcatch_out, seq_type):
+    def tax_to_rdrpcatch(self, rdrpcatch_out, extended_rdrpcatch_out, seq_type, extended_output=False):
         """
         Add taxonomy information to the RdRpCATCH output file.
 
@@ -361,6 +361,8 @@ class mmseqs_parser:
         :type extended_rdrpcatch_out: str
         :param seq_type: Type of sequence (prot or nuc).
         :type seq_type: str
+        :param extended_output: If True, keep additional HMM score columns in the output.
+        :type extended_output: bool
         :return: None
         """
         lca_dict = self.parse_mmseqs_tax_lca()
@@ -368,9 +370,10 @@ class mmseqs_parser:
 
         df = pl.read_csv(rdrpcatch_out, separator='\t')
 
-        # drop columns that are not needed
-        df = df.drop(["Best_hit_norm_bitscore_profile", "Best_hit_norm_bitscore_sequence",
-                        "Best_hit_ID_score"])
+        # drop extra HMM score columns unless extended output is requested
+        if not extended_output:
+            df = df.drop(["Best_hit_norm_bitscore_profile", "Best_hit_norm_bitscore_sequence",
+                            "Best_hit_ID_score"])
         
         # Create new columns for taxonomy information
         # For translated sequences, use the frame-specific name

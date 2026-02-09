@@ -23,10 +23,10 @@ console = Console()
 # Group options in rich-click help output for the scan command
 click.rich_click.OPTION_GROUPS = {
     # Command path as seen by rich-click when running: python -m rdrpcatch.cli.args scan
-    "rdrpcatch.cli.args scan": [
+    "rdrpcatch scan": [
         {
             "name": "Input & output options",
-            "options": ["--input", "--output", "--db-dir", "--seq-type", "--gen-code", "--length-thr"],
+            "options": ["--input", "--output", "--db-dir", "--seq-type", "--gen-code", "--length-thr", "--extended-output"],
         },
         {
             "name": "Database options",
@@ -304,11 +304,15 @@ def cli():
               is_flag=True,
               default=False,
               help="Force overwrite of existing output directory. (default: False)")
+@click.option('--extended-output',
+              is_flag=True,
+              default=False,
+              help="Keep additional HMM score columns (norm_bitscore_profile, norm_bitscore_sequence, ID_score) in the output. (default: False)")
 
 @click.pass_context
 def scan(ctx, input, output, db_options, db_dir, alt_mmseqs_tax_db, custom_dbs, seq_type, verbose, evalue,
          incevalue, domevalue, incdomevalue, zvalue, default_hmmsearch_params,
-         cpus, length_thr, gen_code, bundle, keep_tmp, overwrite):
+         cpus, length_thr, gen_code, bundle, keep_tmp, overwrite, extended_output):
     """Scan sequences for RdRps."""
 
     # Resolve MMseqs2 taxonomy database (name or path)
@@ -406,6 +410,7 @@ def scan(ctx, input, output, db_options, db_dir, alt_mmseqs_tax_db, custom_dbs, 
     table.add_row("  Save Temporary Files", "ON" if keep_tmp else "OFF")
     table.add_row("  Force Overwrite", "ON" if overwrite else "OFF")
     table.add_row("  Verbose Mode", "ON" if verbose else "OFF")
+    table.add_row("  Extended Output", "ON" if extended_output else "OFF")
 
     console.print(Panel(table, title="Scan Configuration"))
 
@@ -429,7 +434,8 @@ def scan(ctx, input, output, db_options, db_dir, alt_mmseqs_tax_db, custom_dbs, 
         gen_code=gen_code,
         bundle=bundle,
         keep_tmp=keep_tmp,
-        overwrite=overwrite
+        overwrite=overwrite,
+        extended_output=extended_output
     )
 
 #
