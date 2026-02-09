@@ -20,7 +20,7 @@ Our web server is live! https://rdrpcatch.bioinformatics.nl
 - Added `--alt-mmseqs-tax-db` to optionally use an alternative MMseqs2 taxonomy database, either by name (under `mmseqs_dbs`) or by full path to a pressed MMseqs2 database.
 - Improved CLI validation for numeric parameters and genetic code values, with clearer error messages for invalid combinations (e.g. `--db-options none` without `--custom-dbs`).
 - Added shorthand aliases `Olendraite_fam` and `Olendraite_gen` in `--db-options` as equivalents to `TSA_Olendraite_fam` and `TSA_Olendraite_gen`.
-
+- Added --extended-output flag to CLI for optionally keeping additional HMM score columns in the output.
 
 ### Version 0.0.7 -> 0.0.8 Changelog
 - Added support for custom pHMM databases. See the [Setting up custom pHMM databases](#setting-up-custom-phmm-databases) section for more information.
