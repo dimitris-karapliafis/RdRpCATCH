@@ -244,7 +244,10 @@ A summary of the results is stored in the `{prefix}_rdrpcatch_output_annotated.t
 | `MMseqs_TopHit_lineage` | The lineage of the top hit in the RefSeq Riboviria database.                                                        |
 
 ## Citations
-Manuscript still in preparation. If you use RdRpCATCH, please cite this GitHub repository 
+Our preprint is out! 
+RdRpCATCH: A unified resource for RNA virus discovery using viral RNA-dependent RNA polymerase profile Hidden Markov models
+https://doi.org/10.64898/2026.02.05.703936 
+
 A precompiled version of the used databases is available at Zenodo DOI: [10.5281/zenodo.14358348](https://doi.org/10.5281/zenodo.14358348).  
 If you use RdRpCATCH, please cite the [underlying third party databases](#supported-databases) :
 
