@@ -432,36 +432,40 @@ def run_scan(input_file, output_dir, db_options, db_dir, mmseqs_db_path, custom_
             logger.loud_log(f"No hits found by RdRpCATCH for databases {db_name_string}. Exiting.")
             return None
 
-        # Generate upset plot
+        # Generate plots
         logger.loud_log("Generating plots.")
 
-        if len(db_name_list) > 1:
+        try:
+            if len(db_name_list) > 1:
+                if verbose:
+                    logger.loud_log("Generating upset plot.")
+                else:
+                    logger.silent_log("Generating upset plot.")
+
+                plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).upset_plotter(set_dict)
+
+
             if verbose:
-                logger.loud_log("Generating upset plot.")
+                logger.loud_log(f"Combined dataframe written to: {outputs.combined_tsv_path}")
             else:
-                logger.silent_log("Generating upset plot.")
+                logger.silent_log(f"Combined dataframe written to: {outputs.combined_tsv_path}")
+            # Generate e-value plot
+            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_evalue(combined_df)
+            # Generate score plot
+            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_score(combined_df)
+            # Generate normalized bitscore plot
+            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_norm_bitscore_profile(combined_df)
+            # Generate normalized bitscore sequence plot
+            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_norm_bitscore_sequence(combined_df)
+            # Generate ID score plot
+            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_ID_score(combined_df)
+            # Generate Profile coverage plot
+            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_profile_coverage(combined_df)
+            # Generate sequence coverage plot
+            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_sequence_coverage(combined_df)
+        except Exception as e:
+            logger.loud_log(f"Warning: Plot generation failed: {e}. Continuing without plots.")
 
-            plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).upset_plotter(set_dict)
-
-
-        if verbose:
-            logger.loud_log(f"Combined dataframe written to: {outputs.combined_tsv_path}")
-        else:
-            logger.silent_log(f"Combined dataframe written to: {outputs.combined_tsv_path}")
-        # Generate e-value plot
-        plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_evalue(combined_df)
-        # Generate score plot
-        plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_score(combined_df)
-        # Generate normalized bitscore plot
-        plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_norm_bitscore_profile(combined_df)
-        # Generate normalized bitscore sequence plot
-        plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_norm_bitscore_sequence(combined_df)
-        # Generate ID score plot
-        plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_ID_score(combined_df)
-        # Generate Profile coverage plot
-        plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_profile_coverage(combined_df)
-        # Generate sequence coverage plot
-        plot.Plotter(outputs.plot_outdir, outputs.tsv_outdir, prefix).plot_sequence_coverage(combined_df)
         # Extract all the sequences
         combined_set = set.union(*[value for value in set_dict.values()])
         translated_combined_set = set.union(*[value for value in translated_set_dict.values()])
@@ -600,37 +604,40 @@ def run_scan(input_file, output_dir, db_options, db_dir, mmseqs_db_path, custom_
             logger.loud_log(f"No hits found by RdRpCATCH for databases {db_name_string}. Exiting.")
             return None
 
-        # Generate upset plot
+        # Generate plots
         logger.loud_log("Generating plots.")
 
-        if len(db_name_list) > 1:
+        try:
+            if len(db_name_list) > 1:
+                if verbose:
+                    logger.loud_log("Generating upset plot.")
+                else:
+                    logger.silent_log("Generating upset plot.")
+
+                plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).upset_plotter(set_dict)
+
+
             if verbose:
-                logger.loud_log("Generating upset plot.")
+                logger.loud_log(f"Combined dataframe written to: {outputs.combined_tsv_path}")
             else:
-                logger.silent_log("Generating upset plot.")
+                logger.silent_log(f"Combined dataframe written to: {outputs.combined_tsv_path}")
 
-            plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).upset_plotter(set_dict)
-
-
-        if verbose:
-            logger.loud_log(f"Combined dataframe written to: {outputs.combined_tsv_path}")
-        else:
-            logger.silent_log(f"Combined dataframe written to: {outputs.combined_tsv_path}")
-
-        # Generate e-value plot
-        plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_evalue(combined_df)
-        # Generate score plot
-        plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_score(combined_df)
-        # Generate normalized bitscore plot
-        plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_norm_bitscore_profile(combined_df)
-        # Generate normalized bitscore sequence plot
-        plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_norm_bitscore_sequence(combined_df)
-        # Generate ID score plot
-        plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_ID_score(combined_df)
-        # Generate Profile coverage plot
-        plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_profile_coverage(combined_df)
-        # Generate sequence coverage plot
-        plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_sequence_coverage(combined_df)
+            # Generate e-value plot
+            plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_evalue(combined_df)
+            # Generate score plot
+            plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_score(combined_df)
+            # Generate normalized bitscore plot
+            plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_norm_bitscore_profile(combined_df)
+            # Generate normalized bitscore sequence plot
+            plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_norm_bitscore_sequence(combined_df)
+            # Generate ID score plot
+            plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_ID_score(combined_df)
+            # Generate Profile coverage plot
+            plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_profile_coverage(combined_df)
+            # Generate sequence coverage plot
+            plot.Plotter(outputs.plot_outdir,outputs.tsv_outdir, prefix).plot_sequence_coverage(combined_df)
+        except Exception as e:
+            logger.loud_log(f"Warning: Plot generation failed: {e}. Continuing without plots.")
 
         # Extract all the sequences
         combined_set = set.union(*[value for value in set_dict.values()])

@@ -1,6 +1,6 @@
 {% set name = "RdRpCATCH" %}
 {% set version = "1.0.0" %}
-{% set sha256 = "a4e6015fbcd74df5050ac2ee94a3c2a2b2587b3d167f40742b3f2e782ab06511" %}
+{% set sha256 = "75f71d00214a63949094d771687650119336f8cb012f06d8c00cb4daef853a5e" %}
 
 package:
   name: {{ name|lower }}
@@ -37,6 +37,8 @@ requirements:
     - matplotlib-base ==3.10.1
     - altair ==5.5.0
     - requests ==2.32.3
+    - numpy ==2.2.4
+    - pandas ==2.2.3
 
 test:
   commands:

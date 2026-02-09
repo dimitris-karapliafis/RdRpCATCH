@@ -22,6 +22,7 @@ dependencies = [
     "matplotlib==3.10.1",
     "altair==5.5.0",
     "pandas==2.2.3",
+    "numpy==2.2.4"
     "requests==2.32.3",
     "needletail==0.6.3",
 ]
