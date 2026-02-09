@@ -71,7 +71,7 @@ Mamba is a faster alternative to conda. If you have it installed, you can use it
 The package is available as a bioconda package. You can install it using the following command:
 
 ```bash
-conda env create rdrpcatch -c bioconda rdrpcatch
+conda create rdrpcatch -c bioconda rdrpcatch
 ```
 
 Alternatively, you can install RdRpCATCH from python package index (PyPI) using pip. This requires the installation of the dependencies
