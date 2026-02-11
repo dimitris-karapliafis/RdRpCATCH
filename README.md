@@ -71,6 +71,11 @@ Mamba is a faster alternative to conda. If you have it installed, you can use it
 
 #### Installation steps
 
+
+CAUTION: 11 Feb 2026: We are experiencing some issues due to the incompatibility of pandas and numpy updates with the upsetplot package.
+The issues seem to be fixed with version 1.0.1, which is currently under submission to Bioconda. Please wait until 1.0.1 is available via bioconda
+and try to install following the pip tutorial described below. 
+
 The package is available as a bioconda package. You can install it using the following command:
 
 ```bash
