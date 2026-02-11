@@ -88,12 +88,10 @@ Create a new conda environment and install the dependencies:
 ```bash
 conda create -n rdrpcatch python=3.12
 conda activate rdrpcatch
+pip install rdrpcatch
 conda install -c bioconda mmseqs2==17.b804f seqkit==2.10.0
 ```
-Install the tool from pip:
-```bash
-pip install rdrpcatch
-```
+
 
 Activate the environment and download the RdRpCATCH databases:
 
