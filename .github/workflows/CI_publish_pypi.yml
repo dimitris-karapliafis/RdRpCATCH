@@ -25,4 +25,5 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.RDRPCATCH_PYPI_TOKEN }}
+        skip-existing: true
         verbose: true
