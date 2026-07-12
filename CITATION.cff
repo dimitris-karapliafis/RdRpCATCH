@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "RdRpCATCH: a unified resource for RNA virus discovery using viral RNA-dependent RNA polymerase profile Hidden Markov models"
+type: article-journal
+version: 1.0.4
+date-released: 2026-07-12
+doi: 10.1093/nargab/lqag076
+url: "https://doi.org/10.1093/nargab/lqag076"
+authors:
+  - family-names: "Karapliafis"
+    given-names: "Dimitris"
+  - family-names: "Neri"
+    given-names: "Uri"
+  - family-names: "Olendraite"
+    given-names: "Ingrida"
+  - family-names: "Charon"
+    given-names: "Justine"
+  - family-names: "Sakaguchi"
+    given-names: "Shoichi"
+  - family-names: "Hou"
+    given-names: "Xin"
+  - family-names: "de Ridder"
+    given-names: "Dick"
+  - family-names: "Zwart"
+    given-names: "Mark P"
+  - family-names: "Kupczok"
+    given-names: "Anne"
+
